@@ -1,4 +1,4 @@
-# eldoy SDK for Python
+# elody SDK for Python
 
 ## Installation
 
