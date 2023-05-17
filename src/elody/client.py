@@ -8,7 +8,7 @@ class Client:
     def __init__(self, elody_collection_url=None, static_jwt=None):
         self.elody_collection_url = elody_collection_url or os.environ.get("ELODY_COLLECTION_URL", None)
         self.static_jwt = static_jwt or os.environ.get("STATIC_JWT", None)
-        self.headers = {"Authorization": f"Bearer {static_jwt}"}
+        self.headers = {"Authorization": f"Bearer {self.static_jwt}"}
 
     def __create_mediafile(self, entity_id, mediafile):
         url = f"{self.elody_collection_url}/entities/{entity_id}/mediafiles"
