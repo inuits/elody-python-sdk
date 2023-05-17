@@ -6,7 +6,9 @@ from .exceptions import NonUniqueException, NotFoundException
 
 class Client:
     def __init__(self, elody_collection_url=None, static_jwt=None):
-        self.elody_collection_url = elody_collection_url or os.environ.get("ELODY_COLLECTION_URL", None)
+        self.elody_collection_url = elody_collection_url or os.environ.get(
+            "ELODY_COLLECTION_URL", None
+        )
         self.static_jwt = static_jwt or os.environ.get("STATIC_JWT", None)
         self.headers = {"Authorization": f"Bearer {self.static_jwt}"}
 
@@ -14,9 +16,7 @@ class Client:
         url = f"{self.elody_collection_url}/entities/{entity_id}/mediafiles"
         headers = {**self.headers, **{"Accept": "text/uri-list"}}
         response = requests.post(url, json=mediafile, headers=headers)
-        return self.__handle_response(
-            response, "Failed to create mediafile", "text"
-        )
+        return self.__handle_response(response, "Failed to create mediafile", "text")
 
     def __get_upload_location(
         self, entity_id, filename, is_public=True, identifiers=None
@@ -38,14 +38,12 @@ class Client:
         }
         return self.__create_mediafile(entity_id, mediafile)
 
-    def __handle_response(
-        self, response, error_message, response_type="json"
-    ):
+    def __handle_response(self, response, error_message, response_type="json"):
         if response.status_code == 409:
             raise NonUniqueException(response.text.strip())
         if response.status_code == 404:
             raise NotFoundException(response.text.strip())
-        if response.status_code not in range(200,300):
+        if response.status_code not in range(200, 300):
             raise Exception(f"{error_message}: {response.text.strip()}")
         match response_type:
             case "json":
