@@ -1,0 +1,29 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elody"
+version = "0.0.1"
+description = "elody SDK for Python"
+readme = "README.md"
+authors = [{ name = "Inuits", email = "developers@inuits.eu" }]
+license = { file = "LICENSE" }
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+]
+keywords = ["elody", "SDK"]
+dependencies = [
+  "certifi==2023.5.7",
+  "charset-normalizer==3.1.0",
+  "idna==3.4",
+  "requests==2.30.0",
+  "urllib3==2.0.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/inuits/elody-python-sdk"
