@@ -26,7 +26,7 @@ dependencies = [
   "charset-normalizer==3.2.0",
   "idna==3.4",
   "requests==2.31.0",
-  "urllib3==2.0.3",
+  "urllib3>=1.26.16",
 ]
 
 [project.optional-dependencies]
