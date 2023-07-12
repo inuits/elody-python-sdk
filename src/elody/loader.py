@@ -7,8 +7,8 @@ from inuits_policy_based_auth.exceptions import (
 )
 
 
-def load_apps(flask_app):
-    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"))
+def load_apps(flask_app, logger):
+    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
     for app in apps:
         for resource in apps[app].get("resources", []):
             api_bp = import_module(f"apps.{app}.resources.{resource}").api_bp
@@ -16,7 +16,7 @@ def load_apps(flask_app):
 
 
 def load_policies(policy_factory, logger):
-    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"))
+    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
     for app in apps:
         try:
             auth_type = "authentication"
@@ -38,8 +38,8 @@ def load_policies(policy_factory, logger):
             ).with_traceback(error.__traceback__)
 
 
-def load_queues():
-    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"))
+def load_queues(logger):
+    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
     for app in apps:
         try:
             import_module(f"apps.{app}.resources.queues")
