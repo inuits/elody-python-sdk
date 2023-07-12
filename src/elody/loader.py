@@ -1,5 +1,5 @@
-import elody.util
 import os
+import elody.util as util
 
 from importlib import import_module
 from inuits_policy_based_auth.exceptions import (
