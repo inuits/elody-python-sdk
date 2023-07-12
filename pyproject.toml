@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "elody"
-version = "0.0.4"
+version = "0.0.5"
 description = "elody SDK for Python"
 readme = "README.md"
 authors = [{ name = "Inuits", email = "developers@inuits.eu" }]
@@ -15,6 +15,10 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 keywords = ["elody", "SDK"]
 dependencies = [
@@ -23,6 +27,15 @@ dependencies = [
   "idna==3.4",
   "requests==2.31.0",
   "urllib3==2.0.3",
+]
+
+[project.optional-dependencies]
+loader = [
+  "cloudevents==1.9.0",
+  "inuits-policy-based-auth==4.1.0",
+]
+util = [
+  "cloudevents==1.9.0",
 ]
 
 [project.urls]
