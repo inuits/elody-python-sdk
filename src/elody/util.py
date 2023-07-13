@@ -1,7 +1,24 @@
 import json
+import mimetypes
 
 from cloudevents.conversion import to_dict
 from cloudevents.http import CloudEvent
+
+
+class DuplicateFileException(Exception):
+    def __init__(self, message, filename=None, md5sum=None):
+        super().__init__(message)
+        self.message = message
+        self.filename = filename
+        self.md5sum = md5sum
+
+
+class FileNotFoundException(Exception):
+    pass
+
+
+class MediafileNotFoundException(Exception):
+    pass
 
 
 class NonUniqueException(Exception):
@@ -33,6 +50,11 @@ def get_item_metadata_value(item, key):
         if item["key"] == key:
             return item["value"]
     return ""
+
+
+def get_mimetype_from_filename(filename):
+    mime = mimetypes.guess_type(filename, False)[0]
+    return mime if mime else "application/octet-stream"
 
 
 def mediafile_is_public(mediafile):
