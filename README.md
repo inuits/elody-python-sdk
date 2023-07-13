@@ -4,7 +4,7 @@
 
 To install the Python SDK library using pip:
 ```
-pip install elody-python-sdk
+pip install elody
 ```
 
 ## Usage
