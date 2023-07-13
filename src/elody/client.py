@@ -78,6 +78,11 @@ class Client:
         response = requests.patch(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to update object relations")
 
+    def get_all_objects(self, collection):
+        url = f"{self.elody_collection_url}/{collection}"
+        response = requests.get(url, headers=self.headers)
+        return self.__handle_response(response, "Failed to get objects")
+
     def upload_file_from_url(self, entity_id, filename, file_url, identifiers=None):
         if not identifiers:
             identifiers = list()
