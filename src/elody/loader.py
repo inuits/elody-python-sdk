@@ -66,5 +66,6 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
             os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json"),
             os.getenv("STATIC_ISSUER"),
             os.getenv("STATIC_PUBLIC_KEY"),
+            os.getenv("ALLOWED_ISSUERS", "").split(","),
         )
     return policy()
