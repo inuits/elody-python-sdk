@@ -3,6 +3,19 @@ import mimetypes
 
 from cloudevents.conversion import to_dict
 from cloudevents.http import CloudEvent
+from datetime import datetime
+
+
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+    def encode(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().encode(obj)
 
 
 class DuplicateFileException(Exception):
