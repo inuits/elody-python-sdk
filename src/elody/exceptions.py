@@ -1,8 +1,26 @@
-class NonUniqueException(Exception):
-    def __init__(self, message):
+class DuplicateFileException(Exception):
+    def __init__(self, message, filename=None, md5sum=None):
         super().__init__(message)
+        self.message = message
+        self.filename = filename
+        self.md5sum = md5sum
+
+
+class FileNotFoundException(Exception):
+    pass
+
+
+class NoMediafilesException(Exception):
+    pass
+
+
+class NonUniqueException(Exception):
+    pass
 
 
 class NotFoundException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    pass
+
+
+class UnsupportedVersionException(Exception):
+    pass
