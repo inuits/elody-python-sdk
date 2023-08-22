@@ -3,18 +3,24 @@ import mimetypes
 
 from cloudevents.conversion import to_dict
 from cloudevents.http import CloudEvent
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def __convert_datetime(self, obj):
         if isinstance(obj, datetime):
+            obj = obj.astimezone(timezone.utc)
             return obj.isoformat()
+        return None
+
+    def default(self, obj):
+        if date := self.__convert_datetime(obj):
+            return date
         return super().default(obj)
 
     def encode(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
+        if date := self.__convert_datetime(obj):
+            return date
         return super().encode(obj)
 
 
