@@ -8,20 +8,19 @@ from datetime import datetime, timezone
 
 class CustomJSONEncoder(json.JSONEncoder):
     def __convert_datetime(self, obj):
-        if isinstance(obj, datetime):
+        if obj.tzinfo is None:
             obj = obj.astimezone(timezone.utc)
-            return obj.isoformat()
-        return None
+        return obj.isoformat()
 
     def default(self, obj):
-        if date := self.__convert_datetime(obj):
-            return date
-        return super().default(obj)
+        if not isinstance(obj, datetime):
+            return super().default(obj)
+        return self.__convert_datetime(obj)
 
     def encode(self, obj):
-        if date := self.__convert_datetime(obj):
-            return date
-        return super().encode(obj)
+        if not isinstance(obj, datetime):
+            return super().encode(obj)
+        return self.__convert_datetime(obj)
 
 
 class Singleton(type):
