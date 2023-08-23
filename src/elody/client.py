@@ -95,3 +95,25 @@ class Client:
             upload_location, files={"file": mediafile}, headers=self.headers
         )
         return self.__handle_response(response, "Failed to upload mediafile")
+
+    def add_object_metadata(self, collection, identifier, payload):
+        if collection == "entities":
+            url = f"{self.elody_collection_url}/{collection}/{identifier}/metadata"
+            payload = payload if isinstance(payload, list) else [payload]
+            response = requests.patch(url, json=payload, headers=self.headers)
+            if (response.status_code == 400) and (
+                response.json()["message"].endswith("has no metadata")
+            ):
+                response = requests.post(url, json=payload, headers=self.headers)
+            return self.__handle_response(response, "Failed to add matadata")
+        else:
+            url = f"{self.elody_collection_url}/{collection}/{identifier}"
+            payload = {"metadata": payload if isinstance(payload, list) else [payload]}
+            response = requests.patch(url, json=payload, headers=self.headers)
+            return self.__handle_response(response, "Failed to add matadata")
+
+    def add_entity_mediafiles(self, identifier,  payload):
+        url = f"{self.elody_collection_url}/entities/{identifier}/mediafiles"
+        response = requests.post(url, json=payload, headers=self.headers)
+        return self.__handle_response(response, "Failed to add mediafiles")
+        
