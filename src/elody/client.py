@@ -1,4 +1,5 @@
 import os
+
 import requests
 
 from .exceptions import NonUniqueException, NotFoundException
@@ -53,35 +54,56 @@ class Client:
             case _:
                 return response.json()
 
-    def add_object(self, collection, payload):
+    def get_all_objects(self, collection):
         url = f"{self.elody_collection_url}/{collection}"
-        response = requests.post(url, json=payload, headers=self.headers)
-        return self.__handle_response(response, "Failed to add object")
-
-    def delete_object(self, collection, identifier):
-        url = f"{self.elody_collection_url}/{collection}/{identifier}"
-        response = requests.delete(url, headers=self.headers)
-        return self.__handle_response(response, "Failed to delete object", "text")
+        response = requests.get(url, headers=self.headers)
+        return self.__handle_response(response, "Failed to get objects")
 
     def get_object(self, collection, identifier):
         url = f"{self.elody_collection_url}/{collection}/{identifier}"
         response = requests.get(url, headers=self.headers)
         return self.__handle_response(response, "Failed to get object")
 
+    def add_object(self, collection, payload):
+        url = f"{self.elody_collection_url}/{collection}"
+        response = requests.post(url, json=payload, headers=self.headers)
+        return self.__handle_response(response, "Failed to add object")
+
     def update_object(self, collection, identifier, payload):
         url = f"{self.elody_collection_url}/{collection}/{identifier}"
         response = requests.put(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to update object")
+
+    def delete_object(self, collection, identifier):
+        url = f"{self.elody_collection_url}/{collection}/{identifier}"
+        response = requests.delete(url, headers=self.headers)
+        return self.__handle_response(response, "Failed to delete object", "text")
 
     def update_object_relations(self, collection, identifier, payload):
         url = f"{self.elody_collection_url}/{collection}/{identifier}/relations"
         response = requests.patch(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to update object relations")
 
-    def get_all_objects(self, collection):
-        url = f"{self.elody_collection_url}/{collection}"
-        response = requests.get(url, headers=self.headers)
-        return self.__handle_response(response, "Failed to get objects")
+    def add_object_metadata(self, collection, identifier, payload):
+        if collection == "entities":
+            url = f"{self.elody_collection_url}/{collection}/{identifier}/metadata"
+            payload = payload if isinstance(payload, list) else [payload]
+            response = requests.patch(url, json=payload, headers=self.headers)
+            if response.status_code == 400 and response.json()["message"].endswith(
+                "has no metadata"
+            ):
+                response = requests.post(url, json=payload, headers=self.headers)
+            return self.__handle_response(response, "Failed to add metadata")
+        else:
+            url = f"{self.elody_collection_url}/{collection}/{identifier}"
+            payload = {"metadata": payload if isinstance(payload, list) else [payload]}
+            response = requests.patch(url, json=payload, headers=self.headers)
+            return self.__handle_response(response, "Failed to add metadata")
+
+    def add_entity_mediafiles(self, identifier, payload):
+        url = f"{self.elody_collection_url}/entities/{identifier}/mediafiles"
+        response = requests.post(url, json=payload, headers=self.headers)
+        return self.__handle_response(response, "Failed to add mediafiles")
 
     def upload_file_from_url(self, entity_id, filename, file_url, identifiers=None):
         if not identifiers:
@@ -95,25 +117,3 @@ class Client:
             upload_location, files={"file": mediafile}, headers=self.headers
         )
         return self.__handle_response(response, "Failed to upload mediafile")
-
-    def add_object_metadata(self, collection, identifier, payload):
-        if collection == "entities":
-            url = f"{self.elody_collection_url}/{collection}/{identifier}/metadata"
-            payload = payload if isinstance(payload, list) else [payload]
-            response = requests.patch(url, json=payload, headers=self.headers)
-            if (response.status_code == 400) and (
-                response.json()["message"].endswith("has no metadata")
-            ):
-                response = requests.post(url, json=payload, headers=self.headers)
-            return self.__handle_response(response, "Failed to add matadata")
-        else:
-            url = f"{self.elody_collection_url}/{collection}/{identifier}"
-            payload = {"metadata": payload if isinstance(payload, list) else [payload]}
-            response = requests.patch(url, json=payload, headers=self.headers)
-            return self.__handle_response(response, "Failed to add matadata")
-
-    def add_entity_mediafiles(self, identifier,  payload):
-        url = f"{self.elody_collection_url}/entities/{identifier}/mediafiles"
-        response = requests.post(url, json=payload, headers=self.headers)
-        return self.__handle_response(response, "Failed to add mediafiles")
-        
