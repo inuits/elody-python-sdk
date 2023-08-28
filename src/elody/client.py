@@ -1,5 +1,4 @@
 import os
-
 import requests
 
 from .exceptions import NonUniqueException, NotFoundException
@@ -54,35 +53,15 @@ class Client:
             case _:
                 return response.json()
 
-    def get_all_objects(self, collection):
-        url = f"{self.elody_collection_url}/{collection}"
-        response = requests.get(url, headers=self.headers)
-        return self.__handle_response(response, "Failed to get objects")
-
-    def get_object(self, collection, identifier):
-        url = f"{self.elody_collection_url}/{collection}/{identifier}"
-        response = requests.get(url, headers=self.headers)
-        return self.__handle_response(response, "Failed to get object")
+    def add_entity_mediafiles(self, identifier, payload):
+        url = f"{self.elody_collection_url}/entities/{identifier}/mediafiles"
+        response = requests.post(url, json=payload, headers=self.headers)
+        return self.__handle_response(response, "Failed to add mediafiles")
 
     def add_object(self, collection, payload):
         url = f"{self.elody_collection_url}/{collection}"
         response = requests.post(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to add object")
-
-    def update_object(self, collection, identifier, payload):
-        url = f"{self.elody_collection_url}/{collection}/{identifier}"
-        response = requests.put(url, json=payload, headers=self.headers)
-        return self.__handle_response(response, "Failed to update object")
-
-    def delete_object(self, collection, identifier):
-        url = f"{self.elody_collection_url}/{collection}/{identifier}"
-        response = requests.delete(url, headers=self.headers)
-        return self.__handle_response(response, "Failed to delete object", "text")
-
-    def update_object_relations(self, collection, identifier, payload):
-        url = f"{self.elody_collection_url}/{collection}/{identifier}/relations"
-        response = requests.patch(url, json=payload, headers=self.headers)
-        return self.__handle_response(response, "Failed to update object relations")
 
     def add_object_metadata(self, collection, identifier, payload):
         if collection == "entities":
@@ -100,10 +79,30 @@ class Client:
             response = requests.patch(url, json=payload, headers=self.headers)
             return self.__handle_response(response, "Failed to add metadata")
 
-    def add_entity_mediafiles(self, identifier, payload):
-        url = f"{self.elody_collection_url}/entities/{identifier}/mediafiles"
-        response = requests.post(url, json=payload, headers=self.headers)
-        return self.__handle_response(response, "Failed to add mediafiles")
+    def delete_object(self, collection, identifier):
+        url = f"{self.elody_collection_url}/{collection}/{identifier}"
+        response = requests.delete(url, headers=self.headers)
+        return self.__handle_response(response, "Failed to delete object", "text")
+
+    def get_all_objects(self, collection):
+        url = f"{self.elody_collection_url}/{collection}"
+        response = requests.get(url, headers=self.headers)
+        return self.__handle_response(response, "Failed to get objects")
+
+    def get_object(self, collection, identifier):
+        url = f"{self.elody_collection_url}/{collection}/{identifier}"
+        response = requests.get(url, headers=self.headers)
+        return self.__handle_response(response, "Failed to get object")
+
+    def update_object(self, collection, identifier, payload):
+        url = f"{self.elody_collection_url}/{collection}/{identifier}"
+        response = requests.put(url, json=payload, headers=self.headers)
+        return self.__handle_response(response, "Failed to update object")
+
+    def update_object_relations(self, collection, identifier, payload):
+        url = f"{self.elody_collection_url}/{collection}/{identifier}/relations"
+        response = requests.patch(url, json=payload, headers=self.headers)
+        return self.__handle_response(response, "Failed to update object relations")
 
     def upload_file_from_url(self, entity_id, filename, file_url, identifiers=None):
         if not identifiers:
