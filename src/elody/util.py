@@ -32,6 +32,10 @@ class Singleton(type):
         return cls._instances[cls]
 
 
+def custom_json_dumps(obj):
+    return json.dumps(obj, cls=CustomJSONEncoder)
+
+
 def __send_cloudevent(mq_client, routing_key, data):
     attributes = {"type": routing_key, "source": "dams"}
     event = to_dict(CloudEvent(attributes, data))
