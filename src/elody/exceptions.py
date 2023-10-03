@@ -6,7 +6,15 @@ class DuplicateFileException(Exception):
         self.md5sum = md5sum
 
 
+class ColumnNotFoundException(Exception):
+    pass
+
+
 class FileNotFoundException(Exception):
+    pass
+
+
+class IncorrectTypeException(Exception):
     pass
 
 
