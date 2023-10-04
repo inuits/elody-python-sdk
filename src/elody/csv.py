@@ -48,15 +48,7 @@ class CSVSingleObject(CSVParser):
     def get_mediafile(self):
         return self.__get_type("mediafile")
 
-    def __fill_metadata(self, key, value):
-        if value:
-            self.metadata.append(self._get_metadata_object(key, value))
-
-    def __fill_relations(self, type, key):
-        if key:
-            self.relations.append(self._get_relation_object(type, key))
-
-    def __get_type(self, type):
+    def get_type(self, type="entity"):
         if self.object_type != type:
             raise IncorrectTypeException(f"Not a {type}!")
         object = dict()
@@ -68,6 +60,14 @@ class CSVSingleObject(CSVParser):
             if property:
                 object[property_name] = property
         return object
+
+    def __fill_metadata(self, key, value):
+        if value:
+            self.metadata.append(self._get_metadata_object(key, value))
+
+    def __fill_relations(self, type, key):
+        if key:
+            self.relations.append(self._get_relation_object(type, key))
 
     def __init_fields(self):
         for row in self.reader:
