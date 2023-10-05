@@ -68,7 +68,7 @@ class CSVSingleObject(CSVParser):
         return object
 
     def __fill_identifiers(self, identifier):
-        if identifier:
+        if identifier and identifier not in self.identifiers:
             self.identifiers.append(identifier)
 
     def __fill_metadata(self, key, value):
