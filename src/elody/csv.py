@@ -43,10 +43,10 @@ class CSVSingleObject(CSVParser):
         self.__init_fields()
 
     def get_entity(self):
-        return self.__get_type("entity")
+        return self.get_type("entity")
 
     def get_mediafile(self):
-        return self.__get_type("mediafile")
+        return self.get_type("mediafile")
 
     def get_type(self, type="entity"):
         if self.object_type != type:
