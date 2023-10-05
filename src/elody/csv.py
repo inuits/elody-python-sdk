@@ -62,7 +62,7 @@ class CSVSingleObject(CSVParser):
         }.items():
             if property:
                 object[property_name] = property
-        for top_level_field in top_level_fields:
+        for top_level_field in self.top_level_fields:
             if getattr(self, top_level_field):
                 object[top_level_field] = getattr(self, top_level_field)
         return object
@@ -128,9 +128,7 @@ class CSVMultiObject(CSVParser):
                         )
                     elif key in self.identifier_fields and value:
                         if value not in indexed_dict[type][id]["identifiers"]:
-                            indexed_dict[type][id]["identifiers"].append(
-                                value
-                            )
+                            indexed_dict[type][id]["identifiers"].append(value)
                     elif key in self.top_level_fields and value:
                         indexed_dict[type][id][key] = value
                     elif key not in self.index_mapping.values() and value:
