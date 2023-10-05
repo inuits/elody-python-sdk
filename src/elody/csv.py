@@ -63,7 +63,7 @@ class CSVSingleObject(CSVParser):
             if property:
                 object[property_name] = property
         for top_level_field in self.top_level_fields:
-            if getattr(self, top_level_field):
+            if getattr(self, top_level_field, None):
                 object[top_level_field] = getattr(self, top_level_field)
         return object
 
