@@ -6,6 +6,9 @@ from elody.exceptions import ColumnNotFoundException, IncorrectTypeException
 
 
 class CSVParser:
+    type_fields = ["type"]
+    identifier_fields = ["identifiers", "identifier", "object_id", "entity_id"]
+
     def __init__(self, csvstring):
         self.csvstring = csvstring
         self.reader = csv.DictReader(self.__csv_string_to_file_object())
@@ -40,6 +43,7 @@ class CSVSingleObject(CSVParser):
         self.object_type = object_type
         self.objects = list()
         self.relations = list()
+        self.type = ""
         self.__init_fields()
 
     def get_entity(self):
@@ -53,6 +57,7 @@ class CSVSingleObject(CSVParser):
             raise IncorrectTypeException(f"Not a {type}!")
         object = dict()
         for property_name, property in {
+            "type": self.type,
             "metadata": self.metadata,
             "relations": self.relations,
             "identifiers": self.identifiers,
@@ -60,6 +65,10 @@ class CSVSingleObject(CSVParser):
             if property:
                 object[property_name] = property
         return object
+
+    def __fill_identifiers(self, identifier):
+        if identifier:
+            self.identifiers.append(identifier)
 
     def __fill_metadata(self, key, value):
         if value:
@@ -74,6 +83,10 @@ class CSVSingleObject(CSVParser):
             for key, value in row.items():
                 if self._is_relation_field(key):
                     self.__fill_relations(key, value)
+                elif key in self.identifier_fields:
+                    self.__fill_identifiers(value)
+                elif key in self.type_fields and value:
+                    self.type = value
                 else:
                     self.__fill_metadata(key, value)
 
@@ -112,6 +125,13 @@ class CSVMultiObject(CSVParser):
                         indexed_dict[type][id]["relations"].append(
                             self._get_relation_object(key, value)
                         )
+                    elif key in self.identifier_fields and value:
+                        if value not in indexed_dict[type][id]["identifiers"]:
+                            indexed_dict[type][id]["identifiers"].append(
+                                value
+                            )
+                    elif key in self.type_fields and value:
+                        indexed_dict[type][id]["type"] = value
                     elif key not in self.index_mapping.values() and value:
                         indexed_dict[type][id]["metadata"].append(
                             self._get_metadata_object(key, value)
