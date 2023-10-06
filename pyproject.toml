@@ -32,7 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 loader = [
   "cloudevents>=1.9.0",
-  "inuits-policy-based-auth>=8.1.0",
+  "inuits-policy-based-auth>=9.0.0",
 ]
 util = [
   "cloudevents>=1.9.0",
