@@ -61,9 +61,8 @@ def __get_class(app, auth_type, policy_module_name):
 
 
 def __instantiate_authentication_policy(policy_module_name, policy, logger):
-    token_schema = __load_token_schema()
-
     if policy_module_name == "token_based_policies.authlib_flask_oauth2_policy":
+        token_schema = __load_token_schema()
         allowed_issuers = os.getenv("ALLOWED_ISSUERS")
         allow_anonymous_users = (
             True
@@ -79,6 +78,7 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
             allow_anonymous_users,
         )
     if policy_module_name == "token_based_policies.default_tenant_policy":
+        token_schema = __load_token_schema()
         return policy(
             token_schema, os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json")
         )
