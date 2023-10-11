@@ -93,8 +93,12 @@ class CSVSingleObject(CSVParser):
 
 
 class CSVMultiObject(CSVParser):
-    def __init__(self, csvstring, index_mapping={"entities": "entity_id"}):
+    def __init__(self, csvstring, index_mapping=None):
         super().__init__(csvstring)
+        if not index_mapping:
+            self.index_mapping = {"entities": "entity_id"}
+        else:
+            self.index_mapping = index_mapping
         self.index_mapping = index_mapping
         self.objects = dict()
         self.__fill_objects_from_csv()
