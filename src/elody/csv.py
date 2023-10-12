@@ -93,13 +93,14 @@ class CSVSingleObject(CSVParser):
 
 
 class CSVMultiObject(CSVParser):
-    def __init__(self, csvstring, index_mapping=None):
+    def __init__(self, csvstring, index_mapping=None, object_field_mapping=None):
         super().__init__(csvstring)
-        if not index_mapping:
-            self.index_mapping = {"entities": "entity_id"}
-        else:
+        self.index_mapping = dict()
+        if index_mapping:
             self.index_mapping = index_mapping
-        self.index_mapping = index_mapping
+        self.object_field_mapping = dict()
+        if object_field_mapping:
+            self.object_field_mapping = object_field_mapping
         self.objects = dict()
         self.__fill_objects_from_csv()
 
@@ -108,6 +109,16 @@ class CSVMultiObject(CSVParser):
 
     def get_mediafiles(self):
         return self.objects.get("mediafiles", list())
+
+    def __field_allowed(self, target_object_type, key, value):
+        for object_type, fields in self.object_field_mapping.items():
+            for _ in [x for x in fields if x == key]:
+                if object_type == target_object_type:
+                    return bool(value)
+                return False
+            if object_type == target_object_type:
+                return False
+        return bool(value)
 
     def __fill_objects_from_csv(self):
         indexed_dict = dict()
@@ -122,20 +133,29 @@ class CSVMultiObject(CSVParser):
                     indexed_dict[type] = dict()
                 if id not in indexed_dict[type]:
                     indexed_dict[type][id] = dict()
-                for root_property in ["metadata", "relations", "identifiers"]:
-                    if root_property not in indexed_dict[type][id]:
-                        indexed_dict[type][id][root_property] = list()
                 for key, value in row.items():
-                    if self._is_relation_field(key) and value:
+                    if self._is_relation_field(key) and self.__field_allowed(
+                        type, key, value
+                    ):
+                        indexed_dict[type][id].setdefault("relations", list())
                         indexed_dict[type][id]["relations"].append(
                             self._get_relation_object(key, value)
                         )
-                    elif key in self.identifier_fields and value:
+                    elif key in self.identifier_fields and self.__field_allowed(
+                        type, key, value
+                    ):
+                        indexed_dict[type][id].setdefault("identifiers", list())
                         if value not in indexed_dict[type][id]["identifiers"]:
                             indexed_dict[type][id]["identifiers"].append(value)
-                    elif key in self.top_level_fields and value:
+                    elif key in self.top_level_fields and self.__field_allowed(
+                        type, key, value
+                    ):
                         indexed_dict[type][id][key] = value
-                    elif key not in self.index_mapping.values() and value:
+                    elif (
+                        key not in self.index_mapping.values()
+                        and self.__field_allowed(type, key, value)
+                    ):
+                        indexed_dict[type][id].setdefault("metadata", list())
                         indexed_dict[type][id]["metadata"].append(
                             self._get_metadata_object(key, value)
                         )
