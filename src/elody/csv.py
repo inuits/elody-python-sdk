@@ -127,12 +127,17 @@ class CSVMultiObject(CSVParser):
                 raise ColumnNotFoundException(
                     f"Not all identifying columns are present in CSV"
                 )
+            previous_id = None
             for type, identifying_column in self.index_mapping.items():
                 id = row[identifying_column]
                 if type not in indexed_dict:
                     indexed_dict[type] = dict()
                 if id not in indexed_dict[type]:
                     indexed_dict[type][id] = dict()
+                indexed_dict[type][id]["matching_id"] = id
+                if previous_id:
+                    indexed_dict[type][id]["matching_id"] = previous_id
+                previous_id = id
                 for key, value in row.items():
                     if self._is_relation_field(key) and self.__field_allowed(
                         type, key, value
