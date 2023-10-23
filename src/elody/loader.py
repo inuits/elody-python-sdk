@@ -89,7 +89,16 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
         return policy(
             token_schema, os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json")
         )
-
+    if policy_module_name == "elody.policies.authentication.multi_tenant_policy":
+        tenant_defining_types = os.getenv("TENANT_DEFINING_TYPES")
+        tenant_defining_types = (
+            tenant_defining_types.split(",") if tenant_defining_types else []
+        )
+        return policy(
+            os.getenv("TENANT_DEFINING_HEADER", "X-tenant-id"),
+            tenant_defining_types,
+            os.getenv("AUTO_CREATE_TENANTS"),
+        )
     return policy()
 
 
