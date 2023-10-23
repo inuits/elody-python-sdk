@@ -49,12 +49,19 @@ def load_queues(logger):
 
 
 def __get_class(app, auth_type, policy_module_name):
-    try:
-        module = import_module(f"apps.{app}.policies.{auth_type}.{policy_module_name}")
-    except:
-        module = import_module(
-            f"inuits_policy_based_auth.{auth_type}.policies.{policy_module_name}"
-        )
+    locations = [
+        policy_module_name,
+        f"apps.{app}.policies.{auth_type}.{policy_module_name}",
+        f"inuits_policy_based_auth.{auth_type}.policies.{policy_module_name}",
+    ]
+    for location in locations:
+        try:
+            module = import_module(location)
+            break
+        except ModuleNotFoundError:
+            pass
+    else:
+        raise ModuleNotFoundError(f"Policy {policy_module_name} not found")
     policy_class_name = module.__name__.split(".")[-1].title().replace("_", "")
     policy = getattr(module, policy_class_name)
     return policy
