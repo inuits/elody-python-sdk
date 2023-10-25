@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "elody"
-version = "0.0.30"
+version = "0.0.31"
 description = "elody SDK for Python"
 readme = "README.md"
 authors = [{ name = "Inuits", email = "developers@inuits.eu" }]
@@ -32,7 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 loader = [
   "cloudevents>=1.9.0",
-  "inuits-policy-based-auth>=9.0.0",
+  "inuits-policy-based-auth>=9.2.0",
 ]
 util = [
   "cloudevents>=1.9.0",
