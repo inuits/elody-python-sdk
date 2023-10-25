@@ -84,7 +84,7 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
             allowed_issuers.split(",") if allowed_issuers else None,
             allow_anonymous_users,
         )
-    if policy_module_name == "token_based_policies.default_tenant_policy":
+    if policy_module_name == "token_based_policies.tenant_token_roles_policy":
         token_schema = __load_token_schema()
         return policy(
             token_schema, os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json")
