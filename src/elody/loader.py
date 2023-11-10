@@ -87,7 +87,11 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
     if policy_module_name == "token_based_policies.tenant_token_roles_policy":
         token_schema = __load_token_schema()
         return policy(
-            token_schema, os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json")
+            token_schema,
+            os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json"),
+            True
+            if os.getenv("ALLOW_ANONYMOUS_USERS", "false").lower() == "true"
+            else False,
         )
     if policy_module_name == "elody.policies.authentication.multi_tenant_policy":
         tenant_defining_types = os.getenv("TENANT_DEFINING_TYPES")
