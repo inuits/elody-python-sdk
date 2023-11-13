@@ -13,7 +13,12 @@ from validator import entity_schema, mediafile_schema, validate_json
 class CSVParser:
     top_level_fields = ["type", "filename"]
     identifier_fields = ["identifiers", "identifier", "object_id", "entity_id"]
-    schema_mapping = {"entity": entity_schema, "mediafile": mediafile_schema}
+    schema_mapping = {
+        "entity": entity_schema,
+        "entities": entity_schema,
+        "mediafile": mediafile_schema,
+        "mediafiles": mediafile_schema,
+    }
 
     def __init__(self, csvstring):
         self.csvstring = csvstring
@@ -114,10 +119,14 @@ class CSVMultiObject(CSVParser):
         if object_field_mapping:
             self.object_field_mapping = object_field_mapping
         self.objects = dict()
+        self.errors = dict()
         self.__fill_objects_from_csv()
 
     def get_entities(self):
         return self.objects.get("entities", list())
+
+    def get_errors(self):
+        return self.errors
 
     def get_mediafiles(self):
         return self.objects.get("mediafiles", list())
@@ -176,5 +185,22 @@ class CSVMultiObject(CSVParser):
                         indexed_dict[type][id]["metadata"].append(
                             self._get_metadata_object(key, value)
                         )
-        for metadata_type, objects in indexed_dict.items():
-            self.objects[metadata_type] = list(objects.values())
+        self.__validate_indexed_dict(indexed_dict)
+        for object_type, objects in indexed_dict.items():
+            self.objects[object_type] = list(objects.values())
+
+    def __validate_indexed_dict(self, indexed_dict):
+        for object_type, objects in indexed_dict.items():
+            error_ids = list()
+            for object_id, object in objects.items():
+                if validation_error := validate_json(
+                    object, self.schema_mapping.get(object_type, entity_schema)
+                ):
+                    error_ids.append(object_id)
+                    if object_type not in self.errors:
+                        self.errors[object_type] = list()
+                    self.errors[object_type].append(
+                        f"{object_type} with index {object_id} doesn't have a valid format. {validation_error}"
+                    )
+            for error_id in error_ids:
+                del objects[error_id]
