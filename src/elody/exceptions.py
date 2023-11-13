@@ -18,6 +18,10 @@ class IncorrectTypeException(Exception):
     pass
 
 
+class InvalidObjectException(Exception):
+    pass
+
+
 class NoMediafilesException(Exception):
     pass
 

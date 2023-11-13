@@ -2,12 +2,18 @@ import csv
 import re
 
 from io import StringIO
-from elody.exceptions import ColumnNotFoundException, IncorrectTypeException
+from elody.exceptions import (
+    ColumnNotFoundException,
+    IncorrectTypeException,
+    InvalidObjectException,
+)
+from validator import entity_schema, mediafile_schema, validate_json
 
 
 class CSVParser:
     top_level_fields = ["type", "filename"]
     identifier_fields = ["identifiers", "identifier", "object_id", "entity_id"]
+    schema_mapping = {"entity": entity_schema, "mediafile": mediafile_schema}
 
     def __init__(self, csvstring):
         self.csvstring = csvstring
@@ -65,6 +71,12 @@ class CSVSingleObject(CSVParser):
         for top_level_field in self.top_level_fields:
             if getattr(self, top_level_field, None):
                 object[top_level_field] = getattr(self, top_level_field)
+        if validation_error := validate_json(
+            object, self.schema_mapping.get(type, entity_schema)
+        ):
+            raise InvalidObjectException(
+                f"{type} doesn't have a valid format. {validation_error}"
+            )
         return object
 
     def __fill_identifiers(self, identifier):
