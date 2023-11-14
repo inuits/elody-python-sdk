@@ -68,14 +68,14 @@ def __get_class(app, auth_type, policy_module_name):
 
 
 def __instantiate_authentication_policy(policy_module_name, policy, logger):
+    allow_anonymous_users = os.getenv("ALLOW_ANONYMOUS_USERS", False) in [
+        "True",
+        "true",
+        True,
+    ]
     if policy_module_name == "token_based_policies.authlib_flask_oauth2_policy":
         token_schema = __load_token_schema()
         allowed_issuers = os.getenv("ALLOWED_ISSUERS")
-        allow_anonymous_users = (
-            True
-            if os.getenv("ALLOW_ANONYMOUS_USERS", "false").lower() == "true"
-            else False
-        )
         return policy(
             logger,
             token_schema,
@@ -89,9 +89,7 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
         return policy(
             token_schema,
             os.getenv("ROLE_SCOPE_MAPPING", "role_scope_mapping.json"),
-            True
-            if os.getenv("ALLOW_ANONYMOUS_USERS", "false").lower() == "true"
-            else False,
+            allow_anonymous_users,
         )
     if policy_module_name == "elody.policies.authentication.multi_tenant_policy":
         tenant_defining_types = os.getenv("TENANT_DEFINING_TYPES")
@@ -101,7 +99,7 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
         return policy(
             os.getenv("TENANT_DEFINING_HEADER", "X-tenant-id"),
             tenant_defining_types,
-            os.getenv("AUTO_CREATE_TENANTS"),
+            os.getenv("AUTO_CREATE_TENANTS", False) in ["True", "true", True],
         )
     return policy()
 
