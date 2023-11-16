@@ -60,7 +60,12 @@ def get_mimetype_from_filename(filename):
 
 def mediafile_is_public(mediafile):
     publication_status = get_item_metadata_value(mediafile, "publication_status")
-    return publication_status.lower() in ["beschermd", "expliciet", "publiek"]
+    copyright_color = get_item_metadata_value(mediafile, "copyright_color")
+    return publication_status.lower() in [
+        "beschermd",
+        "expliciet",
+        "publiek",
+    ] or copyright_color.lower() in ["green", "groen"]
 
 
 def read_json_as_dict(filename, logger):
