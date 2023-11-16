@@ -110,7 +110,13 @@ class CSVSingleObject(CSVParser):
 
 
 class CSVMultiObject(CSVParser):
-    def __init__(self, csvstring, index_mapping=None, object_field_mapping=None):
+    def __init__(
+        self,
+        csvstring,
+        index_mapping=None,
+        object_field_mapping=None,
+        required_metadata_values=None,
+    ):
         super().__init__(csvstring)
         self.index_mapping = dict()
         if index_mapping:
@@ -118,6 +124,7 @@ class CSVMultiObject(CSVParser):
         self.object_field_mapping = dict()
         if object_field_mapping:
             self.object_field_mapping = object_field_mapping
+        self.required_metadata_values = required_metadata_values
         self.objects = dict()
         self.errors = dict()
         self.__fill_objects_from_csv()
@@ -186,8 +193,27 @@ class CSVMultiObject(CSVParser):
                             self._get_metadata_object(key, value)
                         )
         self.__validate_indexed_dict(indexed_dict)
+        self.__add_required_fields(indexed_dict)
         for object_type, objects in indexed_dict.items():
             self.objects[object_type] = list(objects.values())
+
+    def __add_required_fields(self, indexed_dict):
+        if not self.required_metadata_values:
+            return
+        for object_type, objects in indexed_dict.items():
+            for required_key, required_value in self.required_metadata_values.get(
+                object_type, dict()
+            ).items():
+                for object in objects.values():
+                    for metadata in object.get("metadata", list()):
+                        if metadata.get("key") == required_key:
+                            break
+                    else:
+                        if "metadata" not in object:
+                            object["metadata"] = list()
+                        object["metadata"].append(
+                            self._get_metadata_object(required_key, required_value)
+                        )
 
     def __validate_indexed_dict(self, indexed_dict):
         for object_type, objects in indexed_dict.items():
