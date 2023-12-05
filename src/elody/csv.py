@@ -38,7 +38,7 @@ class CSVParser:
         }
 
     def _is_relation_field(self, field):
-        if re.fullmatch("(has|is)[A-Z][a-z]+", field):
+        if re.fullmatch("(has|is)([A-Z][a-z]+)+", field):
             return True
         return False
 
