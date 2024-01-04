@@ -7,8 +7,8 @@ from elody.exceptions import (
     IncorrectTypeException,
     InvalidObjectException,
 )
-from validator import entity_schema, mediafile_schema, validate_json
-
+from validator import validate_json
+from schemas import entity_schema, mediafile_schema
 
 class CSVParser:
     top_level_fields = ["type", "filename"]
