@@ -106,10 +106,10 @@ mediafile_schema = {
     "type": "object",
     "default": {},
     "required": [
-        "filename",
+        "identifier",
     ],
     "properties": {
-        "filename": {
+        "identifier": {
             "type": "string",
         },
         "original_file_location": {

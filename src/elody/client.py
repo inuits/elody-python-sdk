@@ -19,7 +19,7 @@ class Client:
         return self.__handle_response(response, "Failed to create mediafile", "text")
 
     def __get_upload_location(
-        self, entity_id, filename, is_public=True, identifiers=None
+        self, entity_id, identifier, is_public=True, identifiers=None
     ):
         if not identifiers:
             identifiers = list()
@@ -32,7 +32,7 @@ class Client:
                 }
             ]
         mediafile = {
-            "filename": filename,
+            "identifier": identifier,
             "metadata": metadata,
             "identifiers": identifiers,
         }
@@ -104,11 +104,11 @@ class Client:
         response = requests.patch(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to update object relations")
 
-    def upload_file_from_url(self, entity_id, filename, file_url, identifiers=None):
+    def upload_file_from_url(self, entity_id, identifier, file_url, identifiers=None):
         if not identifiers:
             identifiers = list()
         upload_location = self.__get_upload_location(
-            entity_id, filename, True, identifiers
+            entity_id, identifier, True, identifiers
         )
         print(upload_location)
         mediafile = requests.get(file_url).content

@@ -11,7 +11,7 @@ from elody.validator import validate_json
 from elody.schemas import entity_schema, mediafile_schema
 
 class CSVParser:
-    top_level_fields = ["type", "filename"]
+    top_level_fields = ["type", "identifier"]
     identifier_fields = ["identifiers", "identifier", "object_id", "entity_id"]
     schema_mapping = {
         "entity": entity_schema,
