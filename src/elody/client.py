@@ -106,12 +106,23 @@ class Client:
         response = requests.patch(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to update object relations")
 
-    def upload_file_from_url(self, entity_id, filename, file_url, identifiers=None):
+    def upload_file_from_url(
+        self,
+        entity_id,
+        filename,
+        file_url,
+        identifiers=None,
+        upload_location_replace_map=None,
+    ):
         if not identifiers:
             identifiers = list()
+        if not upload_location_replace_map:
+            upload_location_replace_map = dict()
         upload_location = self.__get_upload_location(
             entity_id, filename, True, identifiers
         )
+        for current_location, new_location in upload_location_replace_map.items():
+            upload_location = upload_location.replace(current_location, new_location)
         print(upload_location)
         mediafile = requests.get(file_url).content
         response = requests.post(
