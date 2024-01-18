@@ -17,7 +17,7 @@ def load_apps(flask_app, logger):
 
 
 def load_policies(policy_factory, logger):
-    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
+    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST", ""), logger)
     for app in apps:
         try:
             auth_type = "authentication"
