@@ -18,6 +18,10 @@ class IncorrectTypeException(Exception):
     pass
 
 
+class InvalidExtensionException(Exception):
+    pass
+
+
 class InvalidObjectException(Exception):
     pass
 
