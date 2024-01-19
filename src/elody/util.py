@@ -102,13 +102,15 @@ def signal_entity_deleted(mq_client, entity):
     __send_cloudevent(mq_client, "dams.entity_deleted", data)
 
 
+def signal_mediafiles_added_for_entity(mq_client, entity, mediafiles):
+    data = {"entity": entity, "mediafiles": mediafiles}
+    __send_cloudevent(mq_client, "dams.mediafiles_added_for_entity", data)
+
+
 def signal_mediafile_changed(mq_client, old_mediafile, mediafile):
     data = {"old_mediafile": old_mediafile, "mediafile": mediafile}
     __send_cloudevent(mq_client, "dams.mediafile_changed", data)
 
-def signal_mediafiles_added_for_entity(mq_client, entity, mediafiles):
-    data = {"entity": entity, "mediafiles": mediafiles}
-    __send_cloudevent(mq_client, "dams.mediafiles_added_for_entity", data)
 
 def signal_mediafile_deleted(mq_client, mediafile, linked_entities):
     data = {"mediafile": mediafile, "linked_entities": linked_entities}
