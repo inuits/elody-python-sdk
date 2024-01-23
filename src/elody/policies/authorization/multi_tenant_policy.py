@@ -1,3 +1,4 @@
+from flask_restful import abort
 from inuits_policy_based_auth import BaseAuthorizationPolicy, RequestContext
 from inuits_policy_based_auth.contexts import UserContext, PolicyContext
 from storage.storagemanager import StorageManager
@@ -40,15 +41,19 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
         policy_context.access_verdict = True
         if item_id:
             storage = StorageManager().get_db_engine()
+            collection = request.path.split("/")[1]
             item_relations = storage.get_collection_item_relations(
-                request.path.split("/")[1], item_id
+                collection, item_id
             )
             if not any(
                 x
                 for x in item_relations
                 if x["type"] == "isIn" and x["key"] == user_context.x_tenant.raw["_id"]
             ):
-                policy_context.access_verdict = False
+                abort(
+                    404,
+                    message=f"Item with id {id} doesn't exist in collection {collection}",
+                )
         elif "/filter" in request.path:
             user_context.access_restrictions.filters = [
                 {
