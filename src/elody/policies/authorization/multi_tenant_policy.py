@@ -47,15 +47,14 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
                 message=f"Item with id {id} doesn't exist in collection {collection}",
             )
         policy_context.access_verdict = True
-        if item:
-            item_relations = storage.get_collection_item_relations(collection, item_id)
-            if not any(
-                x
-                for x in item_relations
-                if x["type"] == "isIn" and x["key"] == user_context.x_tenant.raw["_id"]
-            ):
-                policy_context.access_verdict = False
-        elif "/filter" in request.path:
+        item_relations = storage.get_collection_item_relations(collection, item_id)
+        if not any(
+            x
+            for x in item_relations
+            if x["type"] == "isIn" and x["key"] == user_context.x_tenant.raw["_id"]
+        ):
+            policy_context.access_verdict = False
+        if "/filter" in request.path:
             user_context.access_restrictions.filters = [
                 {
                     "type": "selection",
