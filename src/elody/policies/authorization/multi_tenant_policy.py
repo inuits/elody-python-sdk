@@ -38,22 +38,23 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
         request = request_context.http_request
         view_args = request.view_args or {}
         item_id = view_args.get("id")
-        policy_context.access_verdict = True
-        if item_id:
-            storage = StorageManager().get_db_engine()
-            collection = request.path.split("/")[1]
-            item_relations = storage.get_collection_item_relations(
-                collection, item_id
+        storage = StorageManager().get_db_engine()
+        collection = request.path.split("/")[1]
+        item = storage.get_item_from_collection_by_id(collection, item_id)
+        if not item:
+            abort(
+                404,
+                message=f"Item with id {id} doesn't exist in collection {collection}",
             )
+        policy_context.access_verdict = True
+        if item:
+            item_relations = storage.get_collection_item_relations(collection, item_id)
             if not any(
                 x
                 for x in item_relations
                 if x["type"] == "isIn" and x["key"] == user_context.x_tenant.raw["_id"]
             ):
-                abort(
-                    404,
-                    message=f"Item with id {id} doesn't exist in collection {collection}",
-                )
+                policy_context.access_verdict = False
         elif "/filter" in request.path:
             user_context.access_restrictions.filters = [
                 {
