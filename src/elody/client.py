@@ -1,6 +1,7 @@
 import os
 import requests
 
+from flask_restful import abort
 from .exceptions import NonUniqueException, NotFoundException
 
 
@@ -19,6 +20,27 @@ class Client:
         headers = {**self.headers, **{"Accept": "text/uri-list"}}
         response = requests.post(url, json=mediafile, headers=headers)
         return self.__handle_response(response, "Failed to create mediafile", "text")
+    
+    def create_mediafile_with_filename(self, filename):
+        data = {"filename": filename}
+        req = requests.post(
+            f"{self.elody_collection_url}/mediafiles",
+            json=data,
+            headers=self.headers,
+        )
+        if req.status_code != 201:
+            raise Exception(req.text.strip())
+        return req
+    
+    def create_ticket(self, mediafile_name):
+        req = requests.post(
+            f"{self.elody_collection_url}/tickets",
+            json={"filename": mediafile_name},
+            headers=self.headers,
+        )
+        if req.status_code != 201:
+            raise Exception(req.text.strip())
+        return req.text.strip().replace('"', "")
 
     def __get_upload_location(
         self, entity_id, filename, is_public=True, identifiers=None
@@ -90,6 +112,16 @@ class Client:
         url = f"{self.elody_collection_url}/{collection}"
         response = requests.get(url, headers=self.headers)
         return self.__handle_response(response, "Failed to get objects")
+    
+    def get_mediafiles_and_check_existence(self, mediafile_ids):
+        try:
+            mediafile_image_data = []
+            for mediafile_id in mediafile_ids:
+                response = self.get_object("mediafiles", mediafile_id)
+                mediafile_image_data.append(response)
+        except Exception as ex:  # it doesn't exist
+            abort(400, message=str(ex))
+        return mediafile_image_data
 
     def get_object(self, collection, identifier):
         url = f"{self.elody_collection_url}/{collection}/{identifier}"
