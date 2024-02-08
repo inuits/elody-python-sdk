@@ -2,6 +2,7 @@ import elody.util as util
 import json
 import os
 
+from elody.policies.permission_handler import set_permissions
 from importlib import import_module
 from inuits_policy_based_auth.exceptions import (
     PolicyFactoryException,
@@ -16,7 +17,9 @@ def load_apps(flask_app, logger):
             flask_app.register_blueprint(api_bp)
 
 
-def load_policies(policy_factory, logger):
+def load_policies(policy_factory, logger, permissions={}):
+    if permissions:
+        set_permissions(permissions)
     apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST", ""), logger)
     for app in apps:
         try:
@@ -52,6 +55,7 @@ def __get_class(app, auth_type, policy_module_name):
     locations = [
         policy_module_name,
         f"apps.{app}.policies.{auth_type}.{policy_module_name}",
+        f"elody.policies.{auth_type}.{policy_module_name}",
         f"inuits_policy_based_auth.{auth_type}.policies.{policy_module_name}",
     ]
     for location in locations:
