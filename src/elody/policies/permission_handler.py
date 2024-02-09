@@ -3,7 +3,7 @@ from elody.util import get_item_metadata_value
 from inuits_policy_based_auth.contexts.user_context import UserContext
 
 
-_permissions: dict
+_permissions = {}
 
 
 def set_permissions(permissions: dict):
