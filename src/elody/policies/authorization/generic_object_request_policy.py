@@ -21,7 +21,7 @@ class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
     ):
         request: Request = request_context.http_request
         if not user_context.auth_objects.get("token") or not regex.match(
-            "^/[^/]+$|^/ngsi-ld/v1/entities/.+$", request.path
+            "^/[^/]+$|^/ngsi-ld/v1/entities$", request.path
         ):
             return policy_context
 

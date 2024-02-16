@@ -30,8 +30,11 @@ class GenericObjectRelationsPolicy(BaseAuthorizationPolicy):
         view_args = request.view_args or {}
         collection = view_args.get("collection", request.path.split("/")[1])
         id = view_args.get("id")
-        storage = StorageManager().get_db_engine()
-        item = storage.get_item_from_collection_by_id(collection, id)
+        item = (
+            StorageManager()
+            .get_db_engine()
+            .get_item_from_collection_by_id(collection, id)
+        )
         if not item:
             abort(
                 404,
