@@ -44,6 +44,7 @@ class GenericObjectRelationsPolicy(BaseAuthorizationPolicy):
                 continue
 
             rules = [
+                PostRequestRules,
                 GetRequestRules,
                 PutRequestRules,
                 PatchRequestRules,
@@ -61,6 +62,18 @@ class GenericObjectRelationsPolicy(BaseAuthorizationPolicy):
                 return policy_context
 
         return policy_context
+
+
+class PostRequestRules:
+    def apply(
+        self, item, user_context: UserContext, request: Request, permissions
+    ) -> bool | None:
+        if request.method != "POST":
+            return None
+
+        return handle_single_item_request(
+            user_context, item, permissions, "create", {"relations": request.json}
+        )
 
 
 class GetRequestRules:
