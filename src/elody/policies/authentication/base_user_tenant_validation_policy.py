@@ -24,9 +24,14 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.x_tenant.id = request.headers.get(
             "X-tenant-id", self.super_tenant_id
         )
-        user_context.x_tenant.roles = self.__get_tenant_roles(user_context.x_tenant.id)
-        user_context.x_tenant.raw = self.__get_x_tenant_raw(user_context.x_tenant.id)
-        user_context.tenants = [user_context.x_tenant]
+        if request.path != "/tenants":
+            user_context.x_tenant.roles = self.__get_tenant_roles(
+                user_context.x_tenant.id
+            )
+            user_context.x_tenant.raw = self.__get_x_tenant_raw(
+                user_context.x_tenant.id
+            )
+            user_context.tenants = [user_context.x_tenant]
         user_context.bag["x_tenant_id"] = user_context.x_tenant.id
         user_context.bag["tenant_defining_entity_id"] = user_context.x_tenant.id
         user_context.bag["tenant_relation_type"] = "isIn"
