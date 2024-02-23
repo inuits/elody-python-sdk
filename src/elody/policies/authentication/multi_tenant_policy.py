@@ -66,10 +66,13 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
             return user_context
         auth_header = self._defining_header
         if not (tenant_id := request_context.http_request.headers.get(auth_header)):
-            if not (
-                tenant := self.__get_tenant_id_from_hashed_api_key(
-                    request_context.http_request.args.get("api_key_hash")
+            if (
+                not (
+                    tenant := self.__get_tenant_id_from_hashed_api_key(
+                        request_context.http_request.args.get("api_key_hash")
+                    )
                 )
+                or request_context.http_request.method != "GET"
             ):
                 raise Forbidden(description=f"{auth_header} header not present")
         else:
