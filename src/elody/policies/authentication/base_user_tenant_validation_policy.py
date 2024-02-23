@@ -24,20 +24,17 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.x_tenant.id = request.headers.get(
             "X-tenant-id", self.super_tenant_id
         )
-        if request.path != "/tenants":
-            user_context.x_tenant.roles = self.__get_tenant_roles(
-                user_context.x_tenant.id
-            )
-            user_context.x_tenant.raw = self.__get_x_tenant_raw(
-                user_context.x_tenant.id
-            )
-            user_context.tenants = [user_context.x_tenant]
+        user_context.x_tenant.roles = self.__get_tenant_roles(
+            user_context.x_tenant.id, request
+        )
+        user_context.x_tenant.raw = self.__get_x_tenant_raw(user_context.x_tenant.id)
+        user_context.tenants = [user_context.x_tenant]
         user_context.bag["x_tenant_id"] = user_context.x_tenant.id
         user_context.bag["tenant_defining_entity_id"] = user_context.x_tenant.id
         user_context.bag["tenant_relation_type"] = "isIn"
         user_context.bag["user_ids"] = self.user["identifiers"]
 
-    def __get_tenant_roles(self, x_tenant_id: str) -> list[str]:
+    def __get_tenant_roles(self, x_tenant_id: str, request) -> list[str]:
         roles = self.__get_user_tenant_relation(self.super_tenant_id).get("roles", [])
         if x_tenant_id != self.super_tenant_id:
             try:
@@ -48,7 +45,7 @@ class BaseUserTenantValidationPolicy(ABC):
                     raise Unauthorized(error.description)
             roles.extend(user_tenant_relation.get("roles", []))
 
-        if len(roles) == 0:
+        if len(roles) == 0 and request.path != "/tenants":
             raise Unauthorized("User has no global roles, switch to a specific tenant.")
         return roles
 
