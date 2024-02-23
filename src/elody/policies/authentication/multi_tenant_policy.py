@@ -1,3 +1,4 @@
+from hashlib import sha256
 from inuits_policy_based_auth import BaseAuthenticationPolicy, RequestContext
 from inuits_policy_based_auth.contexts import UserContext
 from storage.storagemanager import StorageManager
@@ -26,6 +27,19 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
         self._defining_types = defining_types
         self._auto_create_tenants = auto_create_tenants
 
+    def __get_tenant_id_from_hashed_api_key(self, api_key_hash):
+        storage = StorageManager().get_db_engine()
+        tenant = None
+        if not (
+            tenant := storage.get_item_from_collection_by_id("entities", api_key_hash)
+        ):
+            tenants = storage.get_entities(0, 0, 1, {"type": "tenant"})
+            for possible_tenant in tenants.get("results", list()):
+                for id in possible_tenant.get("identifiers", list()):
+                    if api_key_hash == sha256(id.encode()).hexdigest():
+                        return possible_tenant
+        return tenant
+
     def authenticate(self, user_context: UserContext, request_context: RequestContext):
         """
         Get tenant from tenant defining header and set x_tenant accordingly.
@@ -52,9 +66,15 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
             return user_context
         auth_header = self._defining_header
         if not (tenant_id := request_context.http_request.headers.get(auth_header)):
-            raise Forbidden(description=f"{auth_header} header not present")
-        storage = StorageManager().get_db_engine()
-        tenant = storage.get_item_from_collection_by_id("entities", tenant_id)
+            if not (
+                tenant := self.__get_tenant_id_from_hashed_api_key(
+                    request_context.http_request.args.get("api_key_hash")
+                )
+            ):
+                raise Forbidden(description=f"{auth_header} header not present")
+        else:
+            storage = StorageManager().get_db_engine()
+            tenant = storage.get_item_from_collection_by_id("entities", tenant_id)
         if not tenant:
             if not self._auto_create_tenants:
                 raise Forbidden(
