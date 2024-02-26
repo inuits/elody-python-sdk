@@ -81,7 +81,7 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
                 )
                 or request_context.http_request.method != "GET"
                 or not self.__allowed_url_rule_with_api_key_hash(
-                    reqeust_context.http_request.url_rule
+                    request_context.http_request.url_rule
                 )
             ):
                 raise Forbidden(description=f"{auth_header} header not present")
