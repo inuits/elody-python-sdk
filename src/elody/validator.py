@@ -1,6 +1,7 @@
 from jsonschema.exceptions import ValidationError
 from jsonschema.validators import validate
 
+
 def validate_json(json, schema):
     try:
         validate(instance=json, schema=schema)

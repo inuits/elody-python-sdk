@@ -20,7 +20,7 @@ class Client:
         headers = {**self.headers, **{"Accept": "text/uri-list"}}
         response = requests.post(url, json=mediafile, headers=headers)
         return self.__handle_response(response, "Failed to create mediafile", "text")
-    
+
     def create_mediafile_with_filename(self, filename):
         data = {"filename": filename}
         req = requests.post(
@@ -31,7 +31,7 @@ class Client:
         if req.status_code != 201:
             raise Exception(req.text.strip())
         return req
-    
+
     def create_ticket(self, mediafile_name):
         req = requests.post(
             f"{self.elody_collection_url}/tickets",
@@ -112,7 +112,7 @@ class Client:
         url = f"{self.elody_collection_url}/{collection}"
         response = requests.get(url, headers=self.headers)
         return self.__handle_response(response, "Failed to get objects")
-    
+
     def get_mediafiles_and_check_existence(self, mediafile_ids):
         try:
             mediafile_image_data = []

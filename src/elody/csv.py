@@ -10,6 +10,7 @@ from elody.exceptions import (
 from elody.validator import validate_json
 from elody.schemas import entity_schema, mediafile_schema
 
+
 class CSVParser:
     top_level_fields = ["type", "filename"]
     identifier_fields = ["identifiers", "identifier", "object_id", "entity_id"]
