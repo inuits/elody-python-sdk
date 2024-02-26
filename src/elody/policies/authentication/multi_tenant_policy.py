@@ -27,6 +27,13 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
         self._defining_types = defining_types
         self._auto_create_tenants = auto_create_tenants
 
+    def __allowed_url_rule_with_api_key_hash(self, url_rule):
+        return str(url_rule) in [
+            "/tickets/<string:id>",
+            "/mediafiles/<string:id>",
+            "/mediafiles/<string:id>/copyright",
+        ]
+
     def __get_tenant_id_from_hashed_api_key(self, api_key_hash):
         storage = StorageManager().get_db_engine()
         tenant = None
@@ -73,6 +80,9 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
                     )
                 )
                 or request_context.http_request.method != "GET"
+                or not self.__allowed_url_rule_with_api_key_hash(
+                    reqeust_context.http_request.url_rule
+                )
             ):
                 raise Forbidden(description=f"{auth_header} header not present")
         else:
