@@ -1,7 +1,6 @@
 import os
 import requests
 
-from flask_restful import abort
 from .exceptions import NonUniqueException, NotFoundException
 
 
@@ -114,13 +113,10 @@ class Client:
         return self.__handle_response(response, "Failed to get objects")
 
     def get_mediafiles_and_check_existence(self, mediafile_ids):
-        try:
-            mediafile_image_data = []
-            for mediafile_id in mediafile_ids:
-                response = self.get_object("mediafiles", mediafile_id)
-                mediafile_image_data.append(response)
-        except Exception as ex:  # it doesn't exist
-            abort(400, message=str(ex))
+        mediafile_image_data = []
+        for mediafile_id in mediafile_ids:
+            response = self.get_object("mediafiles", mediafile_id)
+            mediafile_image_data.append(response)
         return mediafile_image_data
 
     def get_object(self, collection, identifier):
