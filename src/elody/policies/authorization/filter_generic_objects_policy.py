@@ -25,7 +25,8 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
         ):
             return policy_context
 
-        user_context.access_restrictions.filters = []
+        if not isinstance(user_context.access_restrictions.filters, list):
+            user_context.access_restrictions.filters = []
         type_filter = self.__get_type_filter(user_context, request.json or [])
         if not type_filter:
             policy_context.access_verdict = True
