@@ -111,7 +111,7 @@ class PostRequestRules:
                     user_context.access_restrictions.filters.append(  # pyright: ignore
                         {
                             "type": "selection",
-                            "parent_key": parent_key,
+                            "parent_key": parent_key if parent_key != "root" else "",
                             "key": restriction["key"],
                             "value": restriction["value"],
                             "match_exact": True,
