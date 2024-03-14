@@ -96,6 +96,18 @@ def __is_allowed_to_crud_item(item, permissions, crud):
                 return True
         return None
 
+    for root in restrictions.get("root", []):
+        value = item[root["key"]]
+        if isinstance(value, str):
+            if value not in root["value"]:
+                return None
+        elif isinstance(value, list):
+            for expected_value in root["value"]:
+                if expected_value in value:
+                    return True
+            return None
+
+
     return True
 
 

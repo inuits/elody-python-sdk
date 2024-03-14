@@ -76,11 +76,10 @@ class GetRequestRules:
 
         type_query_parameter = request.args.get("type")
         allowed_item_types = list(permissions["read"].keys())
-        filters = {}
+        filters = []
 
         if type_query_parameter:
             if type_query_parameter in allowed_item_types:
-                filters["type"] = type_query_parameter
                 restrictions = permissions["read"][type_query_parameter].get(
                     "restrictions", {}
                 )
@@ -96,6 +95,7 @@ class GetRequestRules:
                                     }
                                 }
                             )
+                        filters.append({parent_key: {"$all": all_matches}})
                     elif parent_key == "relations":
                         for relation in restrictions[parent_key]:
                             all_matches.append(
@@ -106,22 +106,28 @@ class GetRequestRules:
                                     }
                                 }
                             )
-                    if len(all_matches) > 0:
-                        filters[parent_key] = {"$all": all_matches}
+                        filters.append({parent_key: {"$all": all_matches}})
+                    elif parent_key == "root":
+                        for restriction in restrictions[parent_key]:
+                            filters.append(
+                                {restriction["key"]: {"$in": restriction["value"]}}
+                            )
             else:
                 return None
         else:
-            filters = {
-                "type": {"$in": allowed_item_types},
-                "relations": {
-                    "$elemMatch": {
-                        "key": user_context.bag.get(
-                            "tenant_defining_entity_id", user_context.x_tenant.id
-                        ),
-                        "type": user_context.bag["tenant_relation_type"],
+            filters = [
+                {"type": {"$in": allowed_item_types}},
+                {
+                    "relations": {
+                        "$elemMatch": {
+                            "key": user_context.bag.get(
+                                "tenant_defining_entity_id", user_context.x_tenant.id
+                            ),
+                            "type": user_context.bag["tenant_relation_type"],
+                        }
                     }
                 },
-            }
+            ]
 
         user_context.access_restrictions.filters = filters
         user_context.access_restrictions.post_request_hook = (
