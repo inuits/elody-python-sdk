@@ -81,9 +81,9 @@ class Client:
         response = requests.post(url, json=payload, headers=self.headers)
         return self.__handle_response(response, "Failed to add mediafiles")
 
-    def add_object(self, collection, payload):
+    def add_object(self, collection, payload, params=None):
         url = f"{self.elody_collection_url}/{collection}"
-        response = requests.post(url, json=payload, headers=self.headers)
+        response = requests.post(url, json=payload, headers=self.headers, params=params)
         return self.__handle_response(response, "Failed to add object")
 
     def add_object_metadata(self, collection, identifier, payload):
