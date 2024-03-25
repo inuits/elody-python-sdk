@@ -22,7 +22,7 @@ class GenericObjectMetadataPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not user_context.auth_objects.get("token") or not regex.match(
+        if not regex.match(
             "^/[^/]+/[^/]+/metadata$", request.path
         ):
             return policy_context
