@@ -1,7 +1,6 @@
 import re as regex
 
 from elody.policies.permission_handler import (
-    get_mask_protected_content_post_request_hook,
     get_permissions,
     handle_single_item_request,
 )
@@ -22,9 +21,7 @@ class GenericObjectMetadataPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match(
-            "^/[^/]+/[^/]+/metadata$", request.path
-        ):
+        if not regex.match("^/[^/]+/[^/]+/metadata$", request.path):
             return policy_context
 
         view_args = request.view_args or {}
@@ -68,11 +65,6 @@ class GetRequestRules:
         if request.method != "GET":
             return None
 
-        user_context.access_restrictions.post_request_hook = (
-            get_mask_protected_content_post_request_hook(
-                user_context, permissions, item["type"]
-            )
-        )
         return handle_single_item_request(user_context, item, permissions, "read")
 
 

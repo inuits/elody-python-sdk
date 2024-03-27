@@ -18,7 +18,9 @@ class BaseUserTenantValidationPolicy(ABC):
         pass
 
     @abstractmethod
-    def build_user_context_for_authenticated_user(self, request, user_context: UserContext, user: dict):
+    def build_user_context_for_authenticated_user(
+        self, request, user_context: UserContext, user: dict
+    ):
         self.user = user
         user_context.x_tenant = Tenant()
         user_context.x_tenant.id = request.headers.get(
@@ -33,12 +35,14 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.bag["tenant_defining_entity_id"] = user_context.x_tenant.id
         user_context.bag["tenant_relation_type"] = "isIn"
         user_context.bag["user_ids"] = self.user["identifiers"]
-    
+
     @abstractmethod
-    def build_user_context_for_anonymous_user(self, user_context: UserContext, user: dict):
+    def build_user_context_for_anonymous_user(
+        self, user_context: UserContext, user: dict
+    ):
         self.user = user
         user_context.x_tenant = Tenant()
-        user_context.x_tenant.id =  self.super_tenant_id
+        user_context.x_tenant.id = self.super_tenant_id
         user_context.x_tenant.roles = ["anonymous"]
         user_context.x_tenant.raw = self.__get_x_tenant_raw(user_context.x_tenant.id)
         user_context.tenants = [user_context.x_tenant]

@@ -1,5 +1,8 @@
+import app  # pyright: ignore
+import re as regex
+
 from copy import deepcopy
-from elody.util import get_item_metadata_value
+from elody.util import flatten_dict, interpret_flat_key
 from inuits_policy_based_auth.contexts.user_context import UserContext
 
 
@@ -22,40 +25,6 @@ def get_permissions(role: str, user_context: UserContext):
     return permissions.get(role, {})  # pyright: ignore
 
 
-def handle_single_item_request(
-    user_context: UserContext, item, permissions, crud, request_body={}
-):
-    is_allowed_to_crud_item = __is_allowed_to_crud_item(item, permissions, crud)
-    if not is_allowed_to_crud_item:
-        return is_allowed_to_crud_item
-
-    return __is_allowed_to_crud_item_keys(
-        user_context, item, permissions, crud, request_body
-    )
-
-
-def get_mask_protected_content_post_request_hook(
-    user_context: UserContext, permissions, item_type=None
-):
-    def __post_request_hook(
-        response, *, is_single_item_response=False, single_item_sub_route_key=""
-    ):
-        if is_single_item_response:
-            if single_item_sub_route_key in ["metadata", "relations"]:
-                items = [{single_item_sub_route_key: response[0], "type": item_type}]
-            else:
-                items = [response[0]]
-        else:
-            items = response[0]["results"]
-
-        for item in items:
-            __is_allowed_to_crud_item_keys(user_context, item, permissions, "read")
-
-        return response
-
-    return __post_request_hook
-
-
 def __replace_permission_placeholders(data, placeholder_key, placeholder_value):
     if isinstance(data, dict):
         for key, value in data.items():
@@ -72,179 +41,182 @@ def __replace_permission_placeholders(data, placeholder_key, placeholder_value):
     return data
 
 
-def __is_allowed_to_crud_item(item, permissions, crud):
+def handle_single_item_request(
+    user_context: UserContext, item, permissions, crud, request_body: dict = {}
+):
+    item_in_storage_format, flat_item, object_lists, restrictions_schema = (
+        __prepare_item_for_permission_check(item, permissions, crud)
+    )
+
+    is_allowed_to_crud_item = (
+        __is_allowed_to_crud_item(flat_item, restrictions_schema) if flat_item else None
+    )
+    if not is_allowed_to_crud_item:
+        return is_allowed_to_crud_item
+
+    return __is_allowed_to_crud_item_keys(
+        user_context,
+        item_in_storage_format,
+        flat_item,
+        restrictions_schema,
+        crud,
+        object_lists,
+        flatten_dict(object_lists, request_body),
+    )
+
+
+def mask_protected_content_post_request_hook(user_context: UserContext, permissions):
+    def __post_request_hook(response):
+        items = response["results"]
+        for item in items:
+            (
+                item_in_storage_format,
+                flat_item,
+                object_lists,
+                restrictions_schema,
+            ) = __prepare_item_for_permission_check(item, permissions, "read")
+            if not flat_item:
+                continue
+
+            __is_allowed_to_crud_item_keys(
+                user_context,
+                item_in_storage_format,
+                flat_item,
+                restrictions_schema,
+                "read",
+                object_lists,
+            )
+
+        return response
+
+    return __post_request_hook
+
+
+def __prepare_item_for_permission_check(item, permissions, crud):
+    if item.get("storage_format"):
+        item = item["storage_format"]
     if item["type"] not in permissions[crud].keys():
-        return None
+        return item, None, None, None
 
-    restrictions = permissions[crud][item["type"]].get("restrictions", {})
+    config = app.object_configuration_mapper.get(item["type"])
+    object_lists = config.filtering()["object_lists"]
+    flat_item = flatten_dict(object_lists, item)
 
-    for metadata in restrictions.get("metadata", []):
-        value = get_item_metadata_value(item, metadata["key"])
-        if isinstance(value, str):
-            if value not in metadata["value"]:
-                return None
-        elif isinstance(value, list):
-            for expected_value in metadata["value"]:
-                if expected_value in value:
-                    return True
+    return (
+        item,
+        flat_item,
+        object_lists,
+        __get_restrictions_schema(flat_item, permissions, crud),
+    )
+
+
+def __get_restrictions_schema(flat_item, permissions, crud):
+    schema_type = flat_item.get("schema.type", "elody")
+    schema_version = flat_item.get("schema.version", "1")
+    schema = f"{schema_type}:{schema_version}"
+
+    schemas = permissions[crud][flat_item["type"]]
+    if restrictions_schema := schemas.get(schema):
+        return restrictions_schema
+
+    for schema in reversed(schemas.keys()):
+        if regex.match(f"^{schema_type}:[0-9]{1,3}?$", schema):
+            break
+        schema = None
+    return schemas[schema] if schemas and schema else {}
+
+
+def __is_allowed_to_crud_item(flat_item, restrictions_schema):
+    restrictions = restrictions_schema.get("object_restrictions", {})
+
+    for restricted_key, restricting_values in restrictions.items():
+        restricted_key = restricted_key.split(":")[1]
+        item_value_in_restricting_values = __item_value_in_values(
+            flat_item, restricted_key, restricting_values
+        )
+        if not item_value_in_restricting_values:
             return None
-
-    for relation in restrictions.get("relations", []):
-        keys = _get_relation_keys(item, relation["key"])
-        for expected_value in relation["value"]:
-            if expected_value in keys:
-                return True
-        return None
 
     return True
 
 
-def _get_relation_keys(item: dict, relation_type: str):
-    return [
-        relation["key"]
-        for relation in item["relations"]
-        if relation["type"] == relation_type
-    ]
-
-
 def __is_allowed_to_crud_item_keys(
-    user_context: UserContext, item, permissions, crud, request_body={}
+    user_context: UserContext,
+    item_in_storage_format,
+    flat_item,
+    restrictions_schema,
+    crud,
+    object_lists,
+    flat_request_body: dict = {},
 ):
     user_context.bag["soft_call_response_body"] = []
-    keys_permissions, negate_condition = __get_keys_permissions(
-        permissions[crud][item["type"]]
-    )
+    restrictions = restrictions_schema.get("key_restrictions", {})
 
-    if keys_permissions:
-        initial_item = deepcopy(item)
-        for key in item.keys():
-            data_key = ""
-            if key == "metadata":
-                data_key = "key"
-                (
-                    permission_key_data_map,
-                    data_value_key,
-                ) = __determine_data_per_permission_key(item, key, data_key, "value")
-            elif key == "relations":
-                data_key = "type"
-                (
-                    permission_key_data_map,
-                    data_value_key,
-                ) = __determine_data_per_permission_key(item, key, data_key, "key")
+    for restricted_key, restricting_conditions in restrictions.items():
+        restricted_key = restricted_key.split(":")[1]
+        condition_match = True
+        for condition_key, condition_values in restricting_conditions.items():
+            condition_match = __item_value_in_values(
+                flat_item, condition_key, condition_values, flat_request_body
+            )
+            if not condition_match:
+                break
+
+        if condition_match:
+            if crud == "read":
+                keys_info = interpret_flat_key(restricted_key, object_lists)
+                element = item_in_storage_format
+                for info in keys_info:
+                    if info["is_object_list"]:
+                        element = __get_element_from_object_list_of_item(
+                            element,
+                            info["key"],
+                            info["object_key"],
+                            object_lists,
+                        )
+                element[info["key"]] = "[protected content]"  # pyright: ignore
             else:
-                (
-                    permission_key_data_map,
-                    data_value_key,
-                ) = __determine_data_per_permission_key(item, key)
+                if flat_request_body.get(restricted_key):
+                    user_context.bag["soft_call_response_body"].append(restricted_key)
 
-            for permission_key, data in permission_key_data_map.items():
-                if __is_not_valid_request_on_key(
-                    initial_item,
-                    keys_permissions,
-                    negate_condition,
-                    key,
-                    permission_key,
-                    data_value_key,
-                ):
-                    if crud == "read":
-                        data[data_value_key] = "[protected content]"
-                    else:
-                        if key == data_value_key:
-                            if request_body.get(key):
-                                user_context.bag["soft_call_response_body"].append(key)
-                        else:
-                            for element in request_body.get(key, []):
-                                if f"{key}.{element[data_key]}" == permission_key:
-                                    user_context.bag["soft_call_response_body"].append(
-                                        permission_key
-                                    )
-
+    user_context.bag["requested_item"] = item_in_storage_format
     return len(user_context.bag["soft_call_response_body"]) == 0
 
 
-def __get_keys_permissions(item_permissions):
-    if item_permissions.get("keys"):
-        negate_condition = False
-        keys_permissions = item_permissions["keys"].get("allowed_only", {})
-        if not keys_permissions:
-            negate_condition = True
-            keys_permissions = item_permissions["keys"].get("disallowed_only", {})
+def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict = {}):
+    negate_condition = False
+    if key[0] == "!":
+        key = key[1:]
+        negate_condition = True
 
-        return keys_permissions, negate_condition
-
-    return None, None
-
-
-def __determine_data_per_permission_key(item, root_key, data_key="", data_value_key=""):
-    key_data_map = {}
-
-    if data_key and data_value_key:
-        for data in item[root_key]:
-            key_data_map.update({f"{root_key}.{data[data_key]}": data})
-        value_key = data_value_key
-    else:
-        key_data_map.update({root_key: item})
-        value_key = root_key
-
-    return key_data_map, value_key
-
-
-def __is_not_valid_request_on_key(
-    initial_item,
-    keys_permissions,
-    negate_condition,
-    root_key,
-    key,
-    data_value_key,
-):
-    if root_key == data_value_key:
-        is_in_keys_permissions = lambda: key in keys_permissions.keys()
-    else:
-        is_in_keys_permissions = (
-            lambda: key in keys_permissions.keys()
-            or f"{root_key}.*" in keys_permissions.keys()
-        )
-
-    if is_in_keys_permissions():
-        if __check_key_conditions_disallow_request(
-            initial_item,
-            keys_permissions.get(key, keys_permissions.get(f"{root_key}.*")),
-            negate_condition,
-        ):
-            return True
-    elif not negate_condition:
-        return True
-
-    return False
-
-
-def __check_key_conditions_disallow_request(
-    initial_item, key_conditions, negate_condition
-):
-    multiple_conditions = len(key_conditions) > 1
-    return_value = False if negate_condition and len(key_conditions) == 0 else True
-    switch_return_value = False
-
-    for key_condition in key_conditions:
-        metadata_key, expected_value = key_condition.split("==")
-        actual_value = get_item_metadata_value(initial_item, metadata_key)
-        if isinstance(actual_value, list):
-            is_condition_met = lambda: expected_value in actual_value
+    item_value = flat_request_body.get(key, flat_item[key])
+    expected_values = []
+    for value in values:
+        if flat_item_key_value := flat_item.get(value):
+            value = flat_item_key_value
+        if isinstance(value, list):
+            expected_values.extend(value)
         else:
-            is_condition_met = (
-                lambda: f"{expected_value}".lower() == f"{actual_value}".lower()
-            )
+            expected_values.append(value)
 
-        if is_condition_met():
-            if negate_condition:
-                if not multiple_conditions:
-                    return return_value
-                elif not switch_return_value:
-                    return_value = not return_value
-                    switch_return_value = True
-        elif not negate_condition:
-            return return_value
-        elif switch_return_value:
-            return False
+    if isinstance(item_value, (str, int, float, bool)):
+        if negate_condition:
+            return item_value not in expected_values
+        else:
+            return item_value in expected_values
+    elif isinstance(item_value, list):
+        for expected_value in expected_values:
+            if expected_value in item_value:
+                return True != negate_condition
+        return False != negate_condition
 
-    return not return_value
+    raise Exception(f"Invalid item_value: {item_value}")
+
+
+def __get_element_from_object_list_of_item(
+    item: dict, object_list: str, key: str, object_lists: dict
+):
+    for element in item[object_list]:
+        if element[object_lists[object_list]] == key:
+            return element
+    return {}

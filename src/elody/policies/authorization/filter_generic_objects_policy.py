@@ -3,7 +3,7 @@ import re as regex
 from copy import deepcopy
 from elody.policies.permission_handler import (
     get_permissions,
-    get_mask_protected_content_post_request_hook,
+    mask_protected_content_post_request_hook,
 )
 from flask import Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
@@ -20,9 +20,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match(
-            "^/[^/]+/filter$", request.path
-        ):
+        if not regex.match("^/[^/]+/(filter|filter_v2)$", request.path):
             return policy_context
 
         if not isinstance(user_context.access_restrictions.filters, list):
@@ -60,7 +58,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
                 type_filter = filter
             elif (
                 filter["type"] == "selection"
-                and filter["parent_key"] == ""
+                and filter.get("parent_key", "") == ""
                 and filter["key"] == "type"
             ):
                 type_filter = filter
@@ -69,7 +67,6 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
             user_context.access_restrictions.filters.append(  # pyright: ignore
                 {
                     "type": "selection",
-                    "parent_key": "relations",
                     "key": user_context.bag["tenant_relation_type"],
                     "value": [
                         user_context.bag.get(
@@ -103,24 +100,38 @@ class PostRequestRules:
                 type_filter_values.remove(type_filter_value)
                 continue
 
-            restrictions = permissions["read"][type_filter_value].get(
-                "restrictions", {}
-            )
-            for parent_key in restrictions.keys():
-                for restriction in restrictions[parent_key]:
-                    user_context.access_restrictions.filters.append(  # pyright: ignore
-                        {
-                            "type": "selection",
-                            "parent_key": parent_key if parent_key != "root" else "",
-                            "key": restriction["key"],
-                            "value": restriction["value"],
-                            "match_exact": True,
-                        }
-                    )
+            restrictions_grouped_by_index = {}
+            schemas = permissions["read"][type_filter_value]
+            for schema in schemas.keys():
+                restrictions = schemas[schema].get("object_restrictions", {})
+                for restricted_key, restricting_value in restrictions.items():
+                    index, restricted_key = restricted_key.split(":")
+                    key = f"{schema}|{restricted_key}"
+                    if group := restrictions_grouped_by_index.get(index):
+                        group["key"].append(key)
+                    else:
+                        restrictions_grouped_by_index.update(
+                            {
+                                index: {
+                                    "key": [key],
+                                    "value": restricting_value,
+                                }
+                            }
+                        )
+
+            for restriction in restrictions_grouped_by_index.values():
+                user_context.access_restrictions.filters.append(  # pyright: ignore
+                    {
+                        "type": "selection",
+                        "key": restriction["key"],
+                        "value": restriction["value"],
+                        "match_exact": True,
+                    }
+                )
 
         if len(type_filter_values) == 0:
             return None
         user_context.access_restrictions.post_request_hook = (
-            get_mask_protected_content_post_request_hook(user_context, permissions)
+            mask_protected_content_post_request_hook(user_context, permissions)
         )
         return True

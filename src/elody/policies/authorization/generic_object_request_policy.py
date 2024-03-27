@@ -1,10 +1,12 @@
+import app  # pyright: ignore
 import re as regex
 
 from elody.policies.permission_handler import (
     get_permissions,
-    get_mask_protected_content_post_request_hook,
+    handle_single_item_request,
+    mask_protected_content_post_request_hook,
 )
-from elody.util import get_item_metadata_value
+from elody.util import interpret_flat_key
 from flask import Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
@@ -20,9 +22,7 @@ class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match(
-            "^/[^/]+$|^/ngsi-ld/v1/entities$", request.path
-        ):
+        if not regex.match("^/[^/]+$|^/ngsi-ld/v1/entities$", request.path):
             return policy_context
 
         for role in user_context.x_tenant.roles:
@@ -46,25 +46,15 @@ class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
 
 
 class PostRequestRules:
-    def apply(self, _, request: Request, permissions) -> bool | None:
+    def apply(
+        self, user_context: UserContext, request: Request, permissions
+    ) -> bool | None:
         if request.method != "POST":
             return None
 
-        item = request.json or {}
-        if item["type"] in permissions["create"].keys():
-            restrictions = permissions["create"][item["type"]].get("restrictions", {})
-            for metadata in restrictions.get("metadata", []):
-                value = get_item_metadata_value(item, metadata["key"])
-                if isinstance(value, str):
-                    if value not in metadata["value"]:
-                        return None
-                elif isinstance(value, list):
-                    for expected_value in metadata["value"]:
-                        if expected_value not in value:
-                            return None
-            return True
-
-        return None
+        return handle_single_item_request(
+            user_context, request.json, permissions, "create", request.json
+        )
 
 
 class GetRequestRules:
@@ -80,38 +70,17 @@ class GetRequestRules:
 
         if type_query_parameter:
             if type_query_parameter in allowed_item_types:
+                config = app.object_configuration_mapper.get(type_query_parameter)
+                object_lists_config = config.filtering()["object_lists"]
+
                 restrictions = permissions["read"][type_query_parameter].get(
-                    "restrictions", {}
+                    "object_restrictions", {}
                 )
-                for parent_key in restrictions.keys():
-                    all_matches = []
-                    if parent_key == "metadata":
-                        for metadata in restrictions[parent_key]:
-                            all_matches.append(
-                                {
-                                    "$elemMatch": {
-                                        "key": metadata["key"],
-                                        "value": {"$in": metadata["value"]},
-                                    }
-                                }
-                            )
-                        filters.append({parent_key: {"$all": all_matches}})
-                    elif parent_key == "relations":
-                        for relation in restrictions[parent_key]:
-                            all_matches.append(
-                                {
-                                    "$elemMatch": {
-                                        "type": relation["key"],
-                                        "key": {"$in": relation["value"]},
-                                    }
-                                }
-                            )
-                        filters.append({parent_key: {"$all": all_matches}})
-                    elif parent_key == "root":
-                        for restriction in restrictions[parent_key]:
-                            filters.append(
-                                {restriction["key"]: {"$in": restriction["value"]}}
-                            )
+                for key, value in restrictions.items():
+                    keys_info = interpret_flat_key(key, object_lists_config)
+                    filters.append(
+                        _build_nested_matcher(object_lists_config, keys_info, value)
+                    )
             else:
                 return None
         else:
@@ -131,6 +100,26 @@ class GetRequestRules:
 
         user_context.access_restrictions.filters = filters
         user_context.access_restrictions.post_request_hook = (
-            get_mask_protected_content_post_request_hook(user_context, permissions)
+            mask_protected_content_post_request_hook(user_context, permissions)
         )
         return True
+
+
+def _build_nested_matcher(object_lists_config, keys_info, value, index=0):
+    info = keys_info[index]
+
+    if info["is_object_list"]:
+        nested_matcher = _build_nested_matcher(
+            object_lists_config, keys_info, value, index + 1
+        )
+        elem_match = {
+            "$elemMatch": {
+                object_lists_config[info["key"]]: info["object_key"],
+                keys_info[index + 1]["key"]: nested_matcher,
+            }
+        }
+        return elem_match if index > 0 else {info["key"]: elem_match}
+
+    if isinstance(value, list):
+        value = {"$in": value}
+    return value if index > 0 else {info["key"]: value}
