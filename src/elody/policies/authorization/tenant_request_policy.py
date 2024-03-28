@@ -8,7 +8,7 @@ from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 class TenantRequestPolicy(BaseAuthorizationPolicy):
     def authorize(self, policy_context, user_context, request_context):
         request: Request = request_context.http_request
-        if not regex.match("^(/[^/]+)?/tenants$", request.path):
+        if not regex.match("^(/[^/]+/v[0-9]+)?/tenants$", request.path):
             return policy_context
 
         set_restricting_filter = True

@@ -21,7 +21,7 @@ class GenericObjectRelationsPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match("^(/[^/]+)?/[^/]+/[^/]+/relations$", request.path):
+        if not regex.match("^(/[^/]+/v[0-9]+)?/[^/]+/[^/]+/relations$", request.path):
             return policy_context
 
         view_args = request.view_args or {}
