@@ -20,7 +20,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match("^/[^/]+/(filter|filter_v2)$", request.path):
+        if not regex.match("^(/[^/]+)?/[^/]+/(filter|filter_v2)$", request.path):
             return policy_context
 
         if not isinstance(user_context.access_restrictions.filters, list):

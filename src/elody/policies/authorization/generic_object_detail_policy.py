@@ -21,13 +21,15 @@ class GenericObjectDetailPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match("^/[^/]+/[^/]+$|^/ngsi-ld/v1/entities/[^/]+$", request.path):
+        if not regex.match(
+            "^(/[^/]+)?/[^/]+/[^/]+$|^/ngsi-ld/v1/entities/[^/]+$", request.path
+        ):
             return policy_context
 
         view_args = request.view_args or {}
         collection = "entities"
         if not request.path.startswith("/ngsi-ld/v1/entities"):
-            collection = request.path.split("/")[1]
+            collection = request.path.split("/")[-2]
         id = view_args.get("id")
         item = (
             StorageManager()

@@ -21,11 +21,11 @@ class GenericObjectRelationsPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match("^/[^/]+/[^/]+/relations$", request.path):
+        if not regex.match("^(/[^/]+)?/[^/]+/[^/]+/relations$", request.path):
             return policy_context
 
         view_args = request.view_args or {}
-        collection = view_args.get("collection", request.path.split("/")[1])
+        collection = view_args.get("collection", request.path.split("/")[-3])
         id = view_args.get("id")
         item = (
             StorageManager()

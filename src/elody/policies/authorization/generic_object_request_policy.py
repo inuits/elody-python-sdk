@@ -22,7 +22,7 @@ class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match("^/[^/]+$|^/ngsi-ld/v1/entities$", request.path):
+        if not regex.match("^(/[^/]+)?/[^/]+$|^/ngsi-ld/v1/entities$", request.path):
             return policy_context
 
         for role in user_context.x_tenant.roles:

@@ -1,3 +1,5 @@
+import re as regex
+
 from elody.policies.permission_handler import get_permissions
 from flask import Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
@@ -6,7 +8,7 @@ from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 class TenantRequestPolicy(BaseAuthorizationPolicy):
     def authorize(self, policy_context, user_context, request_context):
         request: Request = request_context.http_request
-        if not user_context.auth_objects.get("token") or request.path != "/tenants":
+        if not regex.match("^(/[^/]+)?/tenants$", request.path):
             return policy_context
 
         set_restricting_filter = True
