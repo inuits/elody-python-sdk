@@ -23,7 +23,7 @@ class GenericObjectDetailPolicy(BaseAuthorizationPolicy):
         request: Request = request_context.http_request
         if not regex.match(
             "^(/[^/]+/v[0-9]+)?/[^/]+/[^/]+$|^/ngsi-ld/v1/entities/[^/]+$", request.path
-        ):
+        ) or not regex.match(r"^(?!.*filter).*", request.path):
             return policy_context
 
         view_args = request.view_args or {}
