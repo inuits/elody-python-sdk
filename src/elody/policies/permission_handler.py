@@ -99,7 +99,7 @@ def __prepare_item_for_permission_check(item, permissions, crud):
         return item, None, None, None
 
     config = app.object_configuration_mapper.get(item["type"])
-    object_lists = config.filtering()["object_lists"]
+    object_lists = config.document_info()["object_lists"]
     flat_item = flatten_dict(object_lists, item)
 
     return (

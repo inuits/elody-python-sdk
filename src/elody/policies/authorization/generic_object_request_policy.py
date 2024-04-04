@@ -73,15 +73,15 @@ class GetRequestRules:
         if type_query_parameter:
             if type_query_parameter in allowed_item_types:
                 config = app.object_configuration_mapper.get(type_query_parameter)
-                object_lists_config = config.filtering()["object_lists"]
+                object_lists = config.document_info()["object_lists"]
 
                 restrictions = permissions["read"][type_query_parameter].get(
                     "object_restrictions", {}
                 )
                 for key, value in restrictions.items():
-                    keys_info = interpret_flat_key(key, object_lists_config)
+                    keys_info = interpret_flat_key(key, object_lists)
                     filters.append(
-                        _build_nested_matcher(object_lists_config, keys_info, value)
+                        _build_nested_matcher(object_lists, keys_info, value)
                     )
             else:
                 return None
@@ -107,16 +107,16 @@ class GetRequestRules:
         return True
 
 
-def _build_nested_matcher(object_lists_config, keys_info, value, index=0):
+def _build_nested_matcher(object_lists, keys_info, value, index=0):
     info = keys_info[index]
 
     if info["is_object_list"]:
         nested_matcher = _build_nested_matcher(
-            object_lists_config, keys_info, value, index + 1
+            object_lists, keys_info, value, index + 1
         )
         elem_match = {
             "$elemMatch": {
-                object_lists_config[info["key"]]: info["object_key"],
+                object_lists[info["key"]]: info["object_key"],
                 keys_info[index + 1]["key"]: nested_matcher,
             }
         }
