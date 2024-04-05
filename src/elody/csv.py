@@ -179,6 +179,7 @@ class CSVMultiObject(CSVParser):
                         type, key, value
                     ):
                         indexed_dict[type][id].setdefault("identifiers", list())
+                        indexed_dict[type][id].setdefault("identifier", value)
                         if value not in indexed_dict[type][id]["identifiers"]:
                             indexed_dict[type][id]["identifiers"].append(value)
                     elif key in self.top_level_fields and self.__field_allowed(
