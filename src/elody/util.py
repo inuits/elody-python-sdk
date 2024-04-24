@@ -175,3 +175,8 @@ def signal_mediafile_changed(mq_client, old_mediafile, mediafile):
 def signal_mediafile_deleted(mq_client, mediafile, linked_entities):
     data = {"mediafile": mediafile, "linked_entities": linked_entities}
     __send_cloudevent(mq_client, "dams.mediafile_deleted", data)
+
+
+def signal_upload_file(mq_client, upload_links, selected_folder):
+    data = {"upload_links": upload_links, "selected_folder": selected_folder}
+    __send_cloudevent(mq_client, "dams.upload_file", data)
