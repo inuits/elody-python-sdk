@@ -30,8 +30,8 @@ class Client:
         )
         return self.__handle_response(response, "Failed to create mediafile", "text")
 
-    def create_mediafile_with_filename(self, filename):
-        data = {"filename": filename}
+    def create_mediafile_with_filename(self, identifier):
+        data = {"identifier": identifier}
         req = requests.post(
             f"{self.elody_collection_url}/mediafiles",
             json=data,
@@ -45,7 +45,7 @@ class Client:
     def create_ticket(self, mediafile_name):
         req = requests.post(
             f"{self.elody_collection_url}/tickets",
-            json={"filename": mediafile_name},
+            json={"identifier": mediafile_name},
             headers=self.headers,
             proxies=self.proxies,
         )
