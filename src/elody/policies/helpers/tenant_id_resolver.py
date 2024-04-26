@@ -193,7 +193,6 @@ class EntityDetailUpdateMetadataRequest(BaseRequest):
         return None
 
 
-# TODO Nog eens testen
 class EntityDetailCreateMetadataRequest(BaseRequest):
     def get_tenant_id(self, request: Request) -> str | None:
         if (
@@ -275,7 +274,6 @@ class MediafileDetailDeleteRequest(BaseRequest):
         return None
 
 
-# TODO BEKIJKEN
 class MediafileDetailGetDerivativesRequest(BaseRequest):
     def get_tenant_id(self, request: Request) -> str | None:
         if (
@@ -286,7 +284,6 @@ class MediafileDetailGetDerivativesRequest(BaseRequest):
         return None
 
 
-# TODO BEKIJKEN
 class MediafileDetailCreateDerivativesRequest(BaseRequest):
     def get_tenant_id(self, request: Request) -> str | None:
         if (
@@ -297,7 +294,6 @@ class MediafileDetailCreateDerivativesRequest(BaseRequest):
         return None
 
 
-# TODO BEKIJKEN
 class MediafileDetailDeleteDerivativesRequest(BaseRequest):
     def get_tenant_id(self, request: Request) -> str | None:
         if (
