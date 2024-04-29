@@ -1,3 +1,5 @@
+import app  # type: ignore
+
 from flask_restful import abort
 from inuits_policy_based_auth import BaseAuthorizationPolicy, RequestContext
 from inuits_policy_based_auth.contexts import UserContext, PolicyContext
@@ -41,7 +43,8 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
         policy_context.access_verdict = True
         if item_id:
             storage = StorageManager().get_db_engine()
-            collection = request.path.split("/")[1]
+            request_name = request.path.split("/")[1]
+            collection = app.collection_mapper.get(request_name, request_name)
             item = storage.get_item_from_collection_by_id(collection, item_id)
             if not item:
                 abort(
@@ -49,7 +52,7 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
                     message=f"Item with id {id} doesn't exist in collection {collection}",
                 )
             item_relations = storage.get_collection_item_relations(collection, item_id)
-            if not any(
+            if item.get("type") != "ticket" and not any(
                 x
                 for x in item_relations
                 if x["type"] == "isIn" and x["key"] == user_context.x_tenant.raw["_id"]
