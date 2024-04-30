@@ -6,7 +6,6 @@ from elody.util import get_item_metadata_value
 
 
 class TenantIdResolver:
-
     def resolve(self, request):
         endpoints = [
             EntityGetRequest,
@@ -41,7 +40,6 @@ class TenantIdResolver:
 
 
 class BaseRequest:
-
     def __init__(self) -> None:
         self.storage = StorageManager().get_db_engine()
         self.super_tenant_id = "tenant:super"
