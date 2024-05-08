@@ -37,12 +37,6 @@ def custom_json_dumps(obj):
     return json.dumps(obj, cls=CustomJSONEncoder)
 
 
-def __send_cloudevent(mq_client, routing_key, data):
-    attributes = {"type": routing_key, "source": "dams"}
-    event = to_dict(CloudEvent(attributes, data))
-    mq_client.send(event, routing_key=routing_key)
-
-
 def flatten_dict(object_lists, data: MutableMapping, parent_key=""):
     flat_dict = {}
     for key, value in __flatten_dict_generator(object_lists, data, parent_key):
@@ -137,16 +131,21 @@ def read_json_as_dict(filename, logger):
     return {}
 
 
+def send_cloudevent(mq_client, source, routing_key, data):
+    event = to_dict(CloudEvent({"source": source, "type": routing_key}, data))
+    mq_client.send(event, routing_key=routing_key)
+
+
 def signal_child_relation_changed(mq_client, collection, id):
     data = {"parent_id": id, "collection": collection}
-    __send_cloudevent(mq_client, "dams.child_relation_changed", data)
+    send_cloudevent(mq_client, "dams", "dams.child_relation_changed", data)
 
 
 def signal_edge_changed(mq_client, parent_ids_from_changed_edges):
     data = {
         "location": f'/entities?ids={",".join(parent_ids_from_changed_edges)}&skip_relations=1'
     }
-    __send_cloudevent(mq_client, "dams.edge_changed", data)
+    send_cloudevent(mq_client, "dams", "dams.edge_changed", data)
 
 
 def signal_entity_changed(mq_client, entity):
@@ -154,29 +153,29 @@ def signal_entity_changed(mq_client, entity):
         "location": f"/entities/{get_raw_id(entity)}",
         "type": entity.get("type", "unspecified"),
     }
-    __send_cloudevent(mq_client, "dams.entity_changed", data)
+    send_cloudevent(mq_client, "dams", "dams.entity_changed", data)
 
 
 def signal_entity_deleted(mq_client, entity):
     data = {"_id": get_raw_id(entity), "type": entity.get("type", "unspecified")}
-    __send_cloudevent(mq_client, "dams.entity_deleted", data)
+    send_cloudevent(mq_client, "dams", "dams.entity_deleted", data)
 
 
 def signal_mediafiles_added_for_entity(mq_client, entity, mediafiles):
     data = {"entity": entity, "mediafiles": mediafiles}
-    __send_cloudevent(mq_client, "dams.mediafiles_added_for_entity", data)
+    send_cloudevent(mq_client, "dams", "dams.mediafiles_added_for_entity", data)
 
 
 def signal_mediafile_changed(mq_client, old_mediafile, mediafile):
     data = {"old_mediafile": old_mediafile, "mediafile": mediafile}
-    __send_cloudevent(mq_client, "dams.mediafile_changed", data)
+    send_cloudevent(mq_client, "dams", "dams.mediafile_changed", data)
 
 
 def signal_mediafile_deleted(mq_client, mediafile, linked_entities):
     data = {"mediafile": mediafile, "linked_entities": linked_entities}
-    __send_cloudevent(mq_client, "dams.mediafile_deleted", data)
+    send_cloudevent(mq_client, "dams", "dams.mediafile_deleted", data)
 
 
 def signal_upload_file(mq_client, upload_links, selected_folder):
     data = {"upload_links": upload_links, "selected_folder": selected_folder}
-    __send_cloudevent(mq_client, "dams.upload_file", data)
+    send_cloudevent(mq_client, "dams", "dams.upload_file", data)
