@@ -1,5 +1,6 @@
 import re as regex
 
+from elody.policies.helpers import get_item
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
@@ -26,22 +27,7 @@ class GenericObjectDetailPolicy(BaseAuthorizationPolicy):
         ):
             return policy_context
 
-        view_args = request.view_args or {}
-        collection = "entities"
-        if not request.path.startswith("/ngsi-ld/v1/entities"):
-            collection = request.path.split("/")[-2]
-        id = view_args.get("id")
-        item = (
-            StorageManager()
-            .get_db_engine()
-            .get_item_from_collection_by_id(view_args.get("collection", collection), id)
-        )
-        if not item:
-            abort(
-                404,
-                message=f"Item with id {id} doesn't exist in collection {collection}",
-            )
-
+        item = get_item(StorageManager(), user_context.bag, request.view_args)
         for role in user_context.x_tenant.roles:
             permissions = get_permissions(role, user_context)
             if not permissions:
@@ -96,7 +82,7 @@ class PutRequestRules:
             return None
 
         return handle_single_item_request(
-            user_context, item, permissions, "update", request.json
+            user_context, item, permissions, "update", request.json  # pyright: ignore
         )
 
 
@@ -108,7 +94,7 @@ class PatchRequestRules:
             return None
 
         return handle_single_item_request(
-            user_context, item, permissions, "update", request.json
+            user_context, item, permissions, "update", request.json  # pyright: ignore
         )
 
 
