@@ -1,5 +1,7 @@
+import app  # pyright: ignore
 import re as regex
 
+from elody.policies.helpers import get_item
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
@@ -21,23 +23,10 @@ class GenericObjectRelationsPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match("^(/[^/]+/v[0-9]+)?/[^/]+/[^/]+/relations$", request.path):
+        if not regex.match("^(/elody/v[0-9]+)?/[^/]+/[^/]+/relations$", request.path):
             return policy_context
 
-        view_args = request.view_args or {}
-        collection = view_args.get("collection", request.path.split("/")[-3])
-        id = view_args.get("id")
-        item = (
-            StorageManager()
-            .get_db_engine()
-            .get_item_from_collection_by_id(collection, id)
-        )
-        if not item:
-            abort(
-                404,
-                message=f"Item with id {id} doesn't exist in collection {collection}",
-            )
-
+        item = get_item(StorageManager(), user_context.bag, request.view_args)
         for role in user_context.x_tenant.roles:
             permissions = get_permissions(role, user_context)
             if not permissions:
@@ -71,8 +60,14 @@ class PostRequestRules:
         if request.method != "POST":
             return None
 
+        content = app.serialize(
+            {"relations": request.json},
+            type=item.get("type"),
+            from_format="elody",
+            to_format=app.object_configuration_mapper.get(item["type"]).SCHEMA_TYPE,
+        )
         return handle_single_item_request(
-            user_context, item, permissions, "create", {"relations": request.json}
+            user_context, item, permissions, "create", content
         )
 
 
@@ -93,8 +88,14 @@ class PutRequestRules:
         if request.method != "PUT":
             return None
 
+        content = app.serialize(
+            {"relations": request.json},
+            type=item.get("type"),
+            from_format="elody",
+            to_format=app.object_configuration_mapper.get(item["type"]).SCHEMA_TYPE,
+        )
         return handle_single_item_request(
-            user_context, item, permissions, "update", {"relations": request.json}
+            user_context, item, permissions, "update", content
         )
 
 
@@ -105,8 +106,14 @@ class PatchRequestRules:
         if request.method != "PATCH":
             return None
 
+        content = app.serialize(
+            {"relations": request.json},
+            type=item.get("type"),
+            from_format="elody",
+            to_format=app.object_configuration_mapper.get(item["type"]).SCHEMA_TYPE,
+        )
         return handle_single_item_request(
-            user_context, item, permissions, "update", {"relations": request.json}
+            user_context, item, permissions, "update", content
         )
 
 
@@ -117,6 +124,12 @@ class DeleteRequestRules:
         if request.method != "DELETE":
             return None
 
+        content = app.serialize(
+            {"relations": request.json},
+            type=item.get("type"),
+            from_format="elody",
+            to_format=app.object_configuration_mapper.get(item["type"]).SCHEMA_TYPE,
+        )
         return handle_single_item_request(
-            user_context, item, permissions, "delete", {"relations": request.json}
+            user_context, item, permissions, "delete", content
         )
