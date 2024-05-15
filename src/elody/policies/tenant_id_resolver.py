@@ -44,6 +44,7 @@ class BaseRequest:
         self.storage = StorageManager().get_db_engine()
         self.super_tenant_id = "tenant:super"
         self.global_types = [
+            "asset",
             "language",
             "type",
             "collectionForm",
