@@ -53,6 +53,9 @@ class BaseRequest:
             "person",
             "externalRecord",
             "verzameling",
+            "arches_record",
+            "manufacturer",
+            "photographer",
         ]
 
     def _get_tenant_id_from_entity(self, entity_id):
@@ -60,6 +63,9 @@ class BaseRequest:
             "entities", entity_id
         )
         entity = self.storage.get_item_from_collection_by_id("entities", entity_id)
+        type = entity.get("type")
+        if type in self.global_types:
+            return "tenant:super"
         if entity_relations:
             for entity_relation in entity_relations:
                 if entity_relation.get("type") == "isIn":
@@ -67,8 +73,17 @@ class BaseRequest:
                         "entities", entity_relation.get("key")
                     )
                     return tenant["_id"]
-        if entity:
-            return f"tenant:{get_item_metadata_value(entity, 'museum')}"
+                if entity_relation.get("type") == "hasInstitution":
+                    instution_relations = self.storage.get_collection_item_relations(
+                        "entities", entity_relation.get("key")
+                    )
+                    for institution_relation in instution_relations:
+                        if institution_relation.get("type") == "defines":
+                            return institution_relation.get("key")
+
+        if entity and get_item_metadata_value(entity, "institution"):
+            return f"tenant:{get_item_metadata_value(entity, 'institution')}"
+        raise Exception("Entity has no tenant, and is suppose to have one.")
 
     def _get_tenant_id_from_mediafile(self, mediafile_id):
         mediafile_relations = self.storage.get_collection_item_relations(
@@ -80,10 +95,10 @@ class BaseRequest:
                 return self._get_tenant_id_from_entity(relation.get("key"))
 
     def _get_tenant_id_from_body(self, item):
-        if item["type"] in self.global_types or item["type"] == "museum":
+        if item["type"] in self.global_types or item["type"] == "institution":
             return "tenant:super"
-        museum_id = get_item_metadata_value(item, "museum")
-        return f"tenant:{museum_id}"
+        institution_id = get_item_metadata_value(item, "institution")
+        return f"tenant:{institution_id}"
 
 
 class EntityGetRequest(BaseRequest):
