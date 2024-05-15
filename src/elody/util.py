@@ -176,6 +176,16 @@ def signal_mediafile_deleted(mq_client, mediafile, linked_entities):
     send_cloudevent(mq_client, "dams", "dams.mediafile_deleted", data)
 
 
+def signal_update_copyright_color_entity(mq_client, entity_id):
+    data = {"_id": entity_id}
+    send_cloudevent(mq_client, "dams", "dams.update_copyright_color_entity", data)
+
+
+def signal_update_copyright_color_mediafile(mq_client, mediafile_id):
+    data = {"_id": mediafile_id}
+    send_cloudevent(mq_client, "dams", "dams.update_copyright_color_entity", data)
+
+
 def signal_upload_file(mq_client, upload_links, selected_folder):
     data = {"upload_links": upload_links, "selected_folder": selected_folder}
     send_cloudevent(mq_client, "dams", "dams.upload_file", data)
