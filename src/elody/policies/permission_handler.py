@@ -44,48 +44,66 @@ def __replace_permission_placeholders(data, placeholder_key, placeholder_value):
 def handle_single_item_request(
     user_context: UserContext, item, permissions, crud, request_body: dict = {}
 ):
-    item_in_storage_format, flat_item, object_lists, restrictions_schema = (
-        __prepare_item_for_permission_check(item, permissions, crud)
-    )
+    try:
+        item_in_storage_format, flat_item, object_lists, restrictions_schema = (
+            __prepare_item_for_permission_check(item, permissions, crud)
+        )
 
-    is_allowed_to_crud_item = (
-        __is_allowed_to_crud_item(flat_item, restrictions_schema) if flat_item else None
-    )
-    if not is_allowed_to_crud_item:
-        return is_allowed_to_crud_item
+        is_allowed_to_crud_item = (
+            __is_allowed_to_crud_item(flat_item, restrictions_schema)
+            if flat_item
+            else None
+        )
+        if not is_allowed_to_crud_item:
+            return is_allowed_to_crud_item
 
-    return __is_allowed_to_crud_item_keys(
-        user_context,
-        item_in_storage_format,
-        flat_item,
-        restrictions_schema,
-        crud,
-        object_lists,
-        flatten_dict(object_lists, request_body),
-    )
+        return __is_allowed_to_crud_item_keys(
+            user_context,
+            item_in_storage_format,
+            flat_item,
+            restrictions_schema,
+            crud,
+            object_lists,
+            flatten_dict(object_lists, request_body),
+        )
+    except Exception as exception:
+        app.log.debug(
+            f"{exception.__class__.__name__}: {str(exception)}",
+            item.get("storage_format", item),
+        )
+        if crud != "read":
+            app.log.debug(f"Request body: {request_body}", {})
+        raise exception
 
 
 def mask_protected_content_post_request_hook(user_context: UserContext, permissions):
     def __post_request_hook(response):
         items = response["results"]
         for item in items:
-            (
-                item_in_storage_format,
-                flat_item,
-                object_lists,
-                restrictions_schema,
-            ) = __prepare_item_for_permission_check(item, permissions, "read")
-            if not flat_item:
-                continue
+            try:
+                (
+                    item_in_storage_format,
+                    flat_item,
+                    object_lists,
+                    restrictions_schema,
+                ) = __prepare_item_for_permission_check(item, permissions, "read")
+                if not flat_item:
+                    continue
 
-            __is_allowed_to_crud_item_keys(
-                user_context,
-                item_in_storage_format,
-                flat_item,
-                restrictions_schema,
-                "read",
-                object_lists,
-            )
+                __is_allowed_to_crud_item_keys(
+                    user_context,
+                    item_in_storage_format,
+                    flat_item,
+                    restrictions_schema,
+                    "read",
+                    object_lists,
+                )
+            except Exception as exception:
+                app.log.debug(
+                    f"{exception.__class__.__name__}: {str(exception)}",
+                    item.get("storage_format", item),
+                )
+                raise exception
 
         return response
 
@@ -93,8 +111,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
 
 
 def __prepare_item_for_permission_check(item, permissions, crud):
-    if item.get("storage_format"):
-        item = item["storage_format"]
+    item = item.get("storage_format", item)
     if item["type"] not in permissions[crud].keys():
         return item, None, None, None
 

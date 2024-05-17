@@ -35,6 +35,9 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.bag["tenant_defining_entity_id"] = user_context.x_tenant.id
         user_context.bag["tenant_relation_type"] = "isIn"
         user_context.bag["user_ids"] = self.user["identifiers"]
+        user_context.bag["http_method"] = request.method
+        user_context.bag["requested_endpoint"] = request.endpoint
+        user_context.bag["full_path"] = request.full_path
 
     @abstractmethod
     def build_user_context_for_anonymous_user(
