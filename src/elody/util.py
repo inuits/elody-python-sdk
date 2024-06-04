@@ -183,7 +183,7 @@ def signal_update_copyright_color_entity(mq_client, entity_id):
 
 def signal_update_copyright_color_mediafile(mq_client, mediafile_id):
     data = {"_id": mediafile_id}
-    send_cloudevent(mq_client, "dams", "dams.update_copyright_color_entity", data)
+    send_cloudevent(mq_client, "dams", "dams.update_copyright_color_mediafile", data)
 
 
 def signal_upload_file(mq_client, upload_links, selected_folder):
