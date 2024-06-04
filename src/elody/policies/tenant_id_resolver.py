@@ -56,6 +56,7 @@ class BaseRequest:
             "arches_record",
             "manufacturer",
             "photographer",
+            "creator",
         ]
 
     def _get_tenant_id_from_entity(self, entity_id):
