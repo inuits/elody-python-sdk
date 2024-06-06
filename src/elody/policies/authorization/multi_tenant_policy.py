@@ -1,5 +1,4 @@
-import app  # type: ignore
-
+from configuration import collection_mapper
 from flask_restful import abort
 from inuits_policy_based_auth import BaseAuthorizationPolicy, RequestContext
 from inuits_policy_based_auth.contexts import UserContext, PolicyContext
@@ -44,7 +43,7 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
         if item_id:
             storage = StorageManager().get_db_engine()
             request_name = request.path.split("/")[1]
-            collection = app.collection_mapper.get(request_name, request_name)
+            collection = collection_mapper.get(request_name, request_name)
             item = storage.get_item_from_collection_by_id(collection, item_id)
             if not item:
                 abort(

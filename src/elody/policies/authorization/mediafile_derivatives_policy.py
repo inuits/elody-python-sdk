@@ -79,7 +79,8 @@ class GetRequestRules:
             return None
 
         return handle_single_item_request(user_context, item, permissions, "read")
-    
+
+
 class DeleteRequestRules:
     def apply(
         self, item, user_context: UserContext, request: Request, permissions

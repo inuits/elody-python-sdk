@@ -1,9 +1,10 @@
-import app  # pyright: ignore
 import re as regex
 
+from configuration import get_object_configuration_mapper  # pyright: ignore
 from copy import deepcopy
 from elody.util import flatten_dict, interpret_flat_key
 from inuits_policy_based_auth.contexts.user_context import UserContext
+from logging_elody.log import log  # pyright: ignore
 
 
 _permissions = {}
@@ -67,12 +68,12 @@ def handle_single_item_request(
             flatten_dict(object_lists, request_body),
         )
     except Exception as exception:
-        app.log.debug(
+        log.debug(
             f"{exception.__class__.__name__}: {str(exception)}",
             item.get("storage_format", item),
         )
         if crud != "read":
-            app.log.debug(f"Request body: {request_body}", {})
+            log.debug(f"Request body: {request_body}", {})
         raise exception
 
 
@@ -99,7 +100,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
                     object_lists,
                 )
             except Exception as exception:
-                app.log.debug(
+                log.debug(
                     f"{exception.__class__.__name__}: {str(exception)}",
                     item.get("storage_format", item),
                 )
@@ -115,7 +116,7 @@ def __prepare_item_for_permission_check(item, permissions, crud):
     if item["type"] not in permissions[crud].keys():
         return item, None, None, None
 
-    config = app.object_configuration_mapper.get(item["type"])
+    config = get_object_configuration_mapper().get(item["type"])
     object_lists = config.document_info()["object_lists"]
     flat_item = flatten_dict(object_lists, item)
 

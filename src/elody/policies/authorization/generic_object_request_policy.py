@@ -1,6 +1,6 @@
-import app  # pyright: ignore
 import re as regex
 
+from configuration import get_object_configuration_mapper  # pyright: ignore
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
@@ -72,7 +72,7 @@ class GetRequestRules:
 
         if type_query_parameter:
             if type_query_parameter in allowed_item_types:
-                config = app.object_configuration_mapper.get(type_query_parameter)
+                config = get_object_configuration_mapper().get(type_query_parameter)
                 object_lists = config.document_info()["object_lists"]
 
                 restrictions = permissions["read"][type_query_parameter].get(

@@ -1,6 +1,6 @@
-import app  # pyright: ignore
 import re as regex
 
+from configuration import get_object_configuration_mapper  # pyright: ignore
 from elody.policies.helpers import get_item
 from elody.policies.permission_handler import (
     get_permissions,
@@ -15,6 +15,7 @@ from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignor
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
+from serialization.serialize import serialize  # pyright: ignore
 from storage.storagemanager import StorageManager  # pyright: ignore
 
 
@@ -64,11 +65,11 @@ class PutRequestRules:
         if request.method != "PUT":
             return None
 
-        content = app.serialize(
+        content = serialize(
             {"metadata": request.json},
             type=item.get("type"),
             from_format="elody",
-            to_format=app.object_configuration_mapper.get(item["type"]).SCHEMA_TYPE,
+            to_format=get_object_configuration_mapper().get(item["type"]).SCHEMA_TYPE,
         )
         return handle_single_item_request(
             user_context, item, permissions, "update", content
@@ -82,11 +83,11 @@ class PatchRequestRules:
         if request.method != "PATCH":
             return None
 
-        content = app.serialize(
+        content = serialize(
             {"metadata": request.json},
             type=item.get("type"),
             from_format="elody",
-            to_format=app.object_configuration_mapper.get(item["type"]).SCHEMA_TYPE,
+            to_format=get_object_configuration_mapper().get(item["type"]).SCHEMA_TYPE,
         )
         return handle_single_item_request(
             user_context, item, permissions, "update", content
