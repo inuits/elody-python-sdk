@@ -51,10 +51,15 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
                     message=f"Item with id {id} doesn't exist in collection {collection}",
                 )
             item_relations = storage.get_collection_item_relations(collection, item_id)
-            if item.get("type") != "ticket" and not any(
-                x
-                for x in item_relations
-                if x["type"] == "isIn" and x["key"] == user_context.x_tenant.raw["_id"]
+            if (
+                item.get("type") != "ticket"
+                and not any(
+                    x
+                    for x in item_relations
+                    if x["type"] == "isIn"
+                    and x["key"] == user_context.x_tenant.raw["_id"]
+                )
+                and collection != "mediafiles"
             ):
                 policy_context.access_verdict = False
         if "/filter" in request.path:
