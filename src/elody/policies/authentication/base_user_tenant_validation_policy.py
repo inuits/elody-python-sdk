@@ -58,21 +58,23 @@ class BaseUserTenantValidationPolicy(ABC):
 
     def __get_tenant_roles(self, x_tenant_id: str, request) -> list[str]:
         roles = self.__get_user_tenant_relation(self.super_tenant_id).get("roles", [])
+        raise Exception(roles, x_tenant_id, self.super_tenant_id)
         if x_tenant_id != self.super_tenant_id:
             try:
                 user_tenant_relation = self.__get_user_tenant_relation(x_tenant_id)
+                # raise Exception(user_tenant_relation)
             except Unauthorized as error:
                 user_tenant_relation = {}
                 if len(roles) == 0:
                     raise Unauthorized(error.description)
             roles.extend(user_tenant_relation.get("roles", []))
-
         if len(roles) == 0 and request.path != "/tenants":
             raise Unauthorized("User has no global roles, switch to a specific tenant.")
         return roles
 
     def __get_user_tenant_relation(self, x_tenant_id: str) -> dict:
         user_tenant_relation = None
+        # raise Exception(self.user.get("relations", []), x_tenant_id)
         for relation in self.user.get("relations", []):
             if relation["key"] == x_tenant_id and relation["type"] == "hasTenant":
                 user_tenant_relation = relation

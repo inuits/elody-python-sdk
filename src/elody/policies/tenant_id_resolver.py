@@ -99,6 +99,10 @@ class BaseRequest:
         if item["type"] in self.global_types or item["type"] == "institution":
             return "tenant:super"
         institution_id = get_item_metadata_value(item, "institution")
+        if not institution_id:
+            for relation in item.get("relations"):
+                if relation.get("type") == "hasInstitution":
+                    institution_id = relation.get("key")
         return f"tenant:{institution_id}"
 
 
