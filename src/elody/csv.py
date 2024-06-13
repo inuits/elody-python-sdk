@@ -23,10 +23,7 @@ class CSVParser:
 
     def __init__(self, csvstring):
         self.csvstring = csvstring
-        virtual_file = self.__csv_string_to_file_object()
-        csv_dialect = csv.Sniffer().sniff(virtual_file.read(1024))
-        virtual_file.seek(0)
-        self.reader = csv.DictReader(virtual_file, dialect=csv_dialect)
+        self.reader = self.__get_reader_from_csv(self.__csv_string_to_file_object())
 
     def _get_metadata_object(self, key, value, lang="en"):
         return {
@@ -48,6 +45,11 @@ class CSVParser:
 
     def __csv_string_to_file_object(self):
         return StringIO(self.csvstring)
+
+    def __get_reader_from_csv(self, csv_file):
+        csv_dialect = csv.Sniffer().sniff(csv_file.read(1024))
+        csv_file.seek(0)
+        return csv.DictReader(csv_file, dialect=csv_dialect)
 
 
 class CSVSingleObject(CSVParser):
