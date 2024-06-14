@@ -57,6 +57,9 @@ class BaseRequest:
             "manufacturer",
             "photographer",
             "creator",
+            "assetPart",
+            "set",
+            "license",
         ]
 
     def _get_tenant_id_from_entity(self, entity_id):
