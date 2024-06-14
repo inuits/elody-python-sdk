@@ -23,7 +23,7 @@ class BaseUserTenantValidationPolicy(ABC):
     ):
         self.user = user
         user_context.x_tenant = Tenant()
-        user_context.x_tenant.id = self._determine_tenant_id(request)
+        user_context.x_tenant.id = self._determine_tenant_id(request, user)
         user_context.x_tenant.roles = self.__get_tenant_roles(
             user_context.x_tenant.id, request
         )
@@ -53,7 +53,7 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.bag["user_ids"] = self.user["identifiers"]
 
     @abstractmethod
-    def _determine_tenant_id(self, request):
+    def _determine_tenant_id(self, request, user):
         pass
 
     def __get_tenant_roles(self, x_tenant_id: str, request) -> list[str]:
@@ -69,10 +69,10 @@ class BaseUserTenantValidationPolicy(ABC):
             roles.extend(user_tenant_relation.get("roles", []))
         
         # raise Exception(not self.has_exactly_one_duplicate(roles) and request.method != "GET")
-        if not self.has_exactly_one_duplicate(roles) and request.method != "GET" and request.path != "/tenants":
-            raise Unauthorized("User has no global roles, switch to a specific tenant.")
-        # if len(roles) == 0 and request.path != "/tenants":
+        # if not self.has_exactly_one_duplicate(roles) and request.path != "/tenants":
         #     raise Unauthorized("User has no global roles, switch to a specific tenant.")
+        if len(roles) == 0 and request.path != "/tenants":
+            raise Unauthorized("User has no global roles, switch to a specific tenant.")
         return roles
 
     def has_exactly_one_duplicate(self, lst):
