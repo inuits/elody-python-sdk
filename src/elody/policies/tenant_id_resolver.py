@@ -35,7 +35,7 @@ class TenantIdResolver:
         for endpoint in endpoints:
             tenant_id = endpoint().get_tenant_id(request)
             if tenant_id != None:
-                relations = user.get("relations",[])
+                relations = user.get("relations", [])
                 has_tenant_relation = any(relation.get("type") == "hasTenant" and relation.get("key") == tenant_id for relation in relations)
                 if has_tenant_relation:
                     return tenant_id
@@ -49,6 +49,7 @@ class BaseRequest:
     def __init__(self) -> None:
         self.storage = StorageManager().get_db_engine()
         self.super_tenant_id = "tenant:super"
+        # TODO refactor this in a more generic way
         self.global_types = [
             "language",
             "type",

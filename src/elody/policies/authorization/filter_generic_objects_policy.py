@@ -69,11 +69,25 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
             user_context.access_restrictions.filters.append(  # pyright: ignore
                 {
                     "type": "selection",
-                    "key": user_context.bag["tenant_relation_type"],
+                    "key": "type",
+                    # TODO refactor this in a more generic way
                     "value": [
-                        user_context.bag.get(
-                            "tenant_defining_entity_id", user_context.x_tenant.id
-                        )
+                        "language",
+                        "type",
+                        "collectionForm",
+                        "institution",
+                        "tag",
+                        "triple",
+                        "person",
+                        "externalRecord",
+                        "verzameling",
+                        "arches_record",
+                        "photographer",
+                        "creator",
+                        "assetPart",
+                        "set",
+                        "license",
+                        "mediafile",
                     ],
                     "match_exact": True,
                 }
