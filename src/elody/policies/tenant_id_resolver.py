@@ -36,7 +36,11 @@ class TenantIdResolver:
             tenant_id = endpoint().get_tenant_id(request)
             if tenant_id != None:
                 relations = user.get("relations", [])
-                has_tenant_relation = any(relation.get("type") == "hasTenant" and relation.get("key") == tenant_id for relation in relations)
+                has_tenant_relation = any(
+                    relation.get("type") == "hasTenant"
+                    and relation.get("key") == tenant_id
+                    for relation in relations
+                )
                 if has_tenant_relation:
                     return tenant_id
                 elif len(relations) == 1 and relations[0].get("key") == "tenant:super":
@@ -44,6 +48,7 @@ class TenantIdResolver:
                 else:
                     return relations[0].get("key")
         return "tenant:super"
+
 
 class BaseRequest:
     def __init__(self) -> None:
