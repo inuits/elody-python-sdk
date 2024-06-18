@@ -66,7 +66,7 @@ class BaseUserTenantValidationPolicy(ABC):
                 if len(roles) == 0:
                     raise Unauthorized(error.description)
             roles.extend(user_tenant_relation.get("roles", []))
-            
+
         if len(roles) == 0 and request.path != "/tenants":
             raise Unauthorized("User has no global roles, switch to a specific tenant.")
         return roles
