@@ -1,4 +1,7 @@
+import re as regex
+
 from abc import ABC, abstractmethod
+from configuration import get_object_configuration_mapper  # pyright: ignore
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
@@ -53,7 +56,7 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.bag["user_ids"] = self.user["identifiers"]
 
     @abstractmethod
-    def _determine_tenant_id(self, request, user):
+    def _determine_tenant_id(self, request, user) -> str:
         pass
 
     def __get_tenant_roles(self, x_tenant_id: str, request) -> list[str]:
@@ -67,7 +70,9 @@ class BaseUserTenantValidationPolicy(ABC):
                     raise Unauthorized(error.description)
             roles.extend(user_tenant_relation.get("roles", []))
 
-        if len(roles) == 0 and request.path != "/tenants":
+        if len(roles) == 0 and not regex.match(
+            "(/[^/]+/v[0-9]+)?/tenants$", request.path
+        ):
             raise Unauthorized("User has no global roles, switch to a specific tenant.")
         return roles
 
@@ -87,8 +92,11 @@ class BaseUserTenantValidationPolicy(ABC):
         return user_tenant_relation
 
     def __get_x_tenant_raw(self, x_tenant_id: str) -> dict:
+        collection = (
+            get_object_configuration_mapper().get("tenant").crud()["collection"]
+        )
         x_tenant_raw = (
-            self.storage.get_item_from_collection_by_id("entities", x_tenant_id) or {}
+            self.storage.get_item_from_collection_by_id(collection, x_tenant_id) or {}
         )
         if x_tenant_raw.get("type") != "tenant":
             raise Unauthorized(f"No tenant {x_tenant_id} exists.")
