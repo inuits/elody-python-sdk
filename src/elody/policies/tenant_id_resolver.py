@@ -6,7 +6,7 @@ from elody.util import get_item_metadata_value
 
 
 class TenantIdResolver:
-    def resolve(self, request):
+    def resolve(self, request, user):
         endpoints = [
             EntityGetRequest,
             EntityPostRequest,
@@ -35,7 +35,18 @@ class TenantIdResolver:
         for endpoint in endpoints:
             tenant_id = endpoint().get_tenant_id(request)
             if tenant_id != None:
-                return tenant_id
+                relations = user.get("relations", [])
+                has_tenant_relation = any(
+                    relation.get("type") == "hasTenant"
+                    and relation.get("key") == tenant_id
+                    for relation in relations
+                )
+                if has_tenant_relation:
+                    return tenant_id
+                elif len(relations) == 1 and relations[0].get("key") == "tenant:super":
+                    return "tenant:super"
+                else:
+                    return relations[0].get("key")
         return "tenant:super"
 
 
@@ -43,6 +54,7 @@ class BaseRequest:
     def __init__(self) -> None:
         self.storage = StorageManager().get_db_engine()
         self.super_tenant_id = "tenant:super"
+        # TODO refactor this in a more generic way
         self.global_types = [
             "language",
             "type",
@@ -102,6 +114,10 @@ class BaseRequest:
         if item["type"] in self.global_types or item["type"] == "institution":
             return "tenant:super"
         institution_id = get_item_metadata_value(item, "institution")
+        if not institution_id:
+            for relation in item.get("relations"):
+                if relation.get("type") == "hasInstitution":
+                    institution_id = relation.get("key")
         return f"tenant:{institution_id}"
 
 

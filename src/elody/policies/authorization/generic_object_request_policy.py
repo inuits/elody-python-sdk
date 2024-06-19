@@ -65,8 +65,11 @@ class GetRequestRules:
     ) -> bool | None:
         if request.method != "GET":
             return None
-
-        type_query_parameter = request.args.get("type")
+        type_query_parameter = (
+            "mediafile"
+            if regex.match(r"^/mediafiles(?:\?(.*))?$", request.path)
+            else request.args.get("type")
+        )
         allowed_item_types = list(permissions["read"].keys())
         filters = []
 
@@ -94,7 +97,10 @@ class GetRequestRules:
                             "key": user_context.bag.get(
                                 "tenant_defining_entity_id", user_context.x_tenant.id
                             ),
-                            "type": user_context.bag["tenant_relation_type"],
+                            "type": [
+                                user_context.bag["tenant_relation_type"],
+                                "belongsTo",
+                            ],
                         }
                     }
                 },
