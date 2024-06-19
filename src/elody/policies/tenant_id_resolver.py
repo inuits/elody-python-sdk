@@ -110,15 +110,19 @@ class BaseRequest:
             if relation.get("type") == "belongsTo":
                 return self._get_tenant_id_from_entity(relation.get("key"))
 
-    def _get_tenant_id_from_body(self, item):
-        if item["type"] in self.global_types or item["type"] == "institution":
+    def _get_tenant_id_from_body(self, item, soft_call=False):
+        if soft_call:
+            return "tenant:super"
+        if item.get("type") in self.global_types or item.get("type") == "institution":
             return "tenant:super"
         institution_id = get_item_metadata_value(item, "institution")
         if not institution_id:
-            for relation in item.get("relations"):
+            for relation in item.get("relations", []):
                 if relation.get("type") == "hasInstitution":
                     institution_id = relation.get("key")
-        return f"tenant:{institution_id}"
+        if institution_id:
+            return f"tenant:{institution_id}"
+        raise Exception(f"Item in body doesn't have an institution.")
 
 
 class EntityGetRequest(BaseRequest):
@@ -137,7 +141,8 @@ class EntityPostRequest(BaseRequest):
             regex.match(r"^/entities(?:\?(.*))?$", request.path)
             and request.method == "POST"
         ):
-            return self._get_tenant_id_from_body(request.json)
+            is_soft_call = request.args.get("soft")is not None
+            return self._get_tenant_id_from_body(request.json, soft_call=is_soft_call)
         return None
 
 
@@ -273,7 +278,8 @@ class MediafilePostRequest(BaseRequest):
             regex.match(r"^/mediafiles(?:\?(.*))?$", request.path)
             and request.method == "POST"
         ):
-            return self._get_tenant_id_from_body(request.json)
+            is_soft_call = request.args.get("soft")is not None
+            return self._get_tenant_id_from_body(request.json, soft_call=is_soft_call)
         return None
 
 
