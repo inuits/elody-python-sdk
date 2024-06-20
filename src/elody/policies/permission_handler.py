@@ -113,7 +113,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
 
 def __prepare_item_for_permission_check(item, permissions, crud):
     item = deepcopy(item.get("storage_format", item))
-    if item["type"] not in permissions[crud].keys():
+    if item.get("type", "") not in permissions[crud].keys():
         return item, None, None, None
 
     config = get_object_configuration_mapper().get(item["type"])
