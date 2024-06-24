@@ -72,6 +72,8 @@ class BaseRequest:
             "assetPart",
             "set",
             "license",
+            # TODO Mediafile should have a link to an asset
+            "mediafile",
         ]
 
     def _get_tenant_id_from_entity(self, entity_id):
@@ -110,6 +112,7 @@ class BaseRequest:
             if relation.get("type") == "belongsTo":
                 return self._get_tenant_id_from_entity(relation.get("key"))
 
+    # TODO Mediafile should have a link to an asset
     def _get_tenant_id_from_body(self, item, soft_call=False):
         if soft_call:
             return "tenant:super"
