@@ -122,15 +122,19 @@ class CSVMultiObject(CSVParser):
         index_mapping=None,
         object_field_mapping=None,
         required_metadata_values=None,
+        metadata_field_mapping=None,
     ):
         super().__init__(csvstring)
-        self.index_mapping = dict()
-        if index_mapping:
-            self.index_mapping = index_mapping
-        self.object_field_mapping = dict()
-        if object_field_mapping:
-            self.object_field_mapping = object_field_mapping
-        self.required_metadata_values = required_metadata_values
+        self.index_mapping = index_mapping if index_mapping else dict()
+        self.object_field_mapping = (
+            object_field_mapping if object_field_mapping else dict()
+        )
+        self.required_metadata_values = (
+            required_metadata_values if required_metadata_values else dict()
+        )
+        self.metadata_field_mapping = (
+            metadata_field_mapping if metadata_field_mapping else dict()
+        )
         self.objects = dict()
         self.errors = dict()
         self.__fill_objects_from_csv()
@@ -194,10 +198,14 @@ class CSVMultiObject(CSVParser):
                         key not in self.index_mapping.values()
                         and self.__field_allowed(type, key, value)
                     ):
-                        indexed_dict[type][id].setdefault("metadata", list())
-                        indexed_dict[type][id]["metadata"].append(
-                            self._get_metadata_object(key, value)
-                        )
+                        # Map the metadata field to a unified key if applicable
+                        metadata_info = self.metadata_field_mapping.get(key, {})
+                        if metadata_info.get("target") == type or not metadata_info:
+                            metadata_key = metadata_info.get("map_to", key)
+                            indexed_dict[type][id].setdefault("metadata", list())
+                            indexed_dict[type][id]["metadata"].append(
+                                self._get_metadata_object(metadata_key, value)
+                            )
         self.__validate_indexed_dict(indexed_dict)
         self.__add_required_fields(indexed_dict)
         for object_type, objects in indexed_dict.items():
