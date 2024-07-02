@@ -43,6 +43,7 @@ def load_policies(policy_factory, logger, permissions={}):
 
 
 def load_queues(logger):
+    import_module("resources.queues")
     apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
     for app in apps:
         try:
