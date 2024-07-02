@@ -72,6 +72,7 @@ class BaseRequest:
             "assetPart",
             "set",
             "license",
+            "share_link"
             # TODO Mediafile should have a link to an asset
             "mediafile",
         ]
