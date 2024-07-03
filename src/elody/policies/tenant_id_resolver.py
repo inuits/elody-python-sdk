@@ -145,7 +145,7 @@ class EntityPostRequest(BaseRequest):
             regex.match(r"^/entities(?:\?(.*))?$", request.path)
             and request.method == "POST"
         ):
-            is_soft_call = request.args.get("soft")is not None
+            is_soft_call = request.args.get("soft") is not None
             return self._get_tenant_id_from_body(request.json, soft_call=is_soft_call)
         return None
 
@@ -282,7 +282,7 @@ class MediafilePostRequest(BaseRequest):
             regex.match(r"^/mediafiles(?:\?(.*))?$", request.path)
             and request.method == "POST"
         ):
-            is_soft_call = request.args.get("soft")is not None
+            is_soft_call = request.args.get("soft") is not None
             return self._get_tenant_id_from_body(request.json, soft_call=is_soft_call)
         return None
 

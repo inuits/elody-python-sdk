@@ -4,6 +4,7 @@ import mimetypes
 from cloudevents.conversion import to_dict
 from cloudevents.http import CloudEvent
 from collections.abc import MutableMapping, Iterable
+from copy import deepcopy
 from datetime import datetime, timezone
 
 
@@ -38,12 +39,17 @@ def custom_json_dumps(obj):
 
 
 def flatten_dict(object_lists, data: MutableMapping, parent_key=""):
+    if not parent_key:
+        data = deepcopy(data)
     flat_dict = {}
     for key, value in __flatten_dict_generator(object_lists, data, parent_key):
         if key in flat_dict:
             if not isinstance(flat_dict[key], list):
                 flat_dict[key] = [flat_dict[key]]
-            flat_dict[key].append(value)
+            if isinstance(value, list):
+                flat_dict[key].extend(value)
+            else:
+                flat_dict[key].append(value)
         else:
             flat_dict[key] = value
     return flat_dict

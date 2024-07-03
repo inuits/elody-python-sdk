@@ -88,7 +88,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
                         "set",
                         "license",
                         "mediafile",
-                        "share_link"
+                        "share_link",
                     ],
                     "match_exact": True,
                 }

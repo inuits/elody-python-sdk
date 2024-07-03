@@ -2,6 +2,7 @@ import re as regex
 
 from abc import ABC, abstractmethod
 from configuration import get_object_configuration_mapper  # pyright: ignore
+from copy import deepcopy
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
@@ -17,8 +18,8 @@ class BaseUserTenantValidationPolicy(ABC):
         self.user = {}
 
     @abstractmethod
-    def get_user(self, id: str) -> dict:
-        pass
+    def get_user(self, id: str, user_context: UserContext) -> dict:
+        user_context.bag["roles_from_idp"] = deepcopy(user_context.x_tenant.roles)
 
     @abstractmethod
     def build_user_context_for_authenticated_user(
