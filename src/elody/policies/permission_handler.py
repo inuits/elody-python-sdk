@@ -47,7 +47,7 @@ def handle_single_item_request(
 ):
     try:
         item_in_storage_format, flat_item, object_lists, restrictions_schema = (
-            __prepare_item_for_permission_check(item, permissions, crud)
+            __prepare_item_for_permission_check(item, permissions, crud, user_context)
         )
 
         is_allowed_to_crud_item = (
@@ -87,7 +87,9 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
                     flat_item,
                     object_lists,
                     restrictions_schema,
-                ) = __prepare_item_for_permission_check(item, permissions, "read")
+                ) = __prepare_item_for_permission_check(
+                    item, permissions, "read", user_context
+                )
                 if not flat_item:
                     continue
 
@@ -111,9 +113,13 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
     return __post_request_hook
 
 
-def __prepare_item_for_permission_check(item, permissions, crud):
+def __prepare_item_for_permission_check(item, permissions, crud, user_context):
     item = deepcopy(item.get("storage_format", item))
-    if item.get("type", "") not in permissions[crud].keys():
+    known_types = user_context.bag.get("known_types")
+    type = item.get("type", "")
+    if (type not in permissions[crud].keys()) or (
+        known_types is not None and type not in known_types
+    ):
         return item, None, None, None
 
     config = get_object_configuration_mapper().get(item["type"])
