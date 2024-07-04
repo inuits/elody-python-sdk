@@ -316,9 +316,7 @@ class MediafileDetailDeleteRequest(BaseRequest):
             regex.match(r"^/mediafiles/(.+)$", request.path)
             and request.method == "DELETE"
         ):
-            raise Exception(
-                self._get_tenant_id_from_mediafile(request.view_args.get("id"))
-            )
+            raise Exception(self._get_tenant_id_from_mediafile(request.view_args.get("id")))
             return self._get_tenant_id_from_mediafile(request.view_args.get("id"))
         return None
 
