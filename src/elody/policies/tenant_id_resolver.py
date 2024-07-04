@@ -3,6 +3,7 @@ import re as regex
 from flask import Request
 from storage.storagemanager import StorageManager  # pyright: ignore
 from elody.util import get_item_metadata_value
+from elody.exceptions import NotFoundException
 
 
 class TenantIdResolver:
@@ -82,6 +83,8 @@ class BaseRequest:
             "entities", entity_id
         )
         entity = self.storage.get_item_from_collection_by_id("entities", entity_id)
+        if not entity:
+            raise NotFoundException(f"The asset with id {entity_id} doesn't exists")
         type = entity.get("type")
         if type in self.global_types:
             return "tenant:super"
@@ -313,6 +316,7 @@ class MediafileDetailDeleteRequest(BaseRequest):
             regex.match(r"^/mediafiles/(.+)$", request.path)
             and request.method == "DELETE"
         ):
+            raise Exception(self._get_tenant_id_from_mediafile(request.view_args.get("id")))
             return self._get_tenant_id_from_mediafile(request.view_args.get("id"))
         return None
 
