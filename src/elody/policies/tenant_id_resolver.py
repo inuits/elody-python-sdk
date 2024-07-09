@@ -72,6 +72,7 @@ class BaseRequest:
             "creator",
             "assetPart",
             "set",
+            "download",
             "license",
             "share_link"
             # TODO Mediafile should have a link to an asset
