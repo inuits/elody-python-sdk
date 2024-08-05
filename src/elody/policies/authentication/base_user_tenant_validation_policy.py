@@ -8,7 +8,7 @@ from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
 )
 from inuits_policy_based_auth.helpers.tenant import Tenant  # pyright: ignore
 from storage.storagemanager import StorageManager  # pyright: ignore
-from werkzeug.exceptions import Unauthorized  # pyright: ignore
+from werkzeug.exceptions import Forbidden  # pyright: ignore
 
 
 class BaseUserTenantValidationPolicy(ABC):
@@ -65,16 +65,16 @@ class BaseUserTenantValidationPolicy(ABC):
         if x_tenant_id != self.super_tenant_id:
             try:
                 user_tenant_relation = self.__get_user_tenant_relation(x_tenant_id)
-            except Unauthorized as error:
+            except Forbidden as error:
                 user_tenant_relation = {}
                 if len(roles) == 0:
-                    raise Unauthorized(error.description)
+                    raise Forbidden(error.description)
             roles.extend(user_tenant_relation.get("roles", []))
 
         if len(roles) == 0 and not regex.match(
             "(/[^/]+/v[0-9]+)?/tenants$", request.path
         ):
-            raise Unauthorized("User has no global roles, switch to a specific tenant.")
+            raise Forbidden("User has no global roles, switch to a specific tenant.")
         return roles
 
     def __get_user_tenant_relation(self, x_tenant_id: str) -> dict:
@@ -86,7 +86,7 @@ class BaseUserTenantValidationPolicy(ABC):
 
         if not user_tenant_relation:
             if x_tenant_id != self.super_tenant_id:
-                raise Unauthorized(f"User is not a member of tenant {x_tenant_id}.")
+                raise Forbidden(f"User is not a member of tenant {x_tenant_id}.")
             else:
                 return {}
 
@@ -100,7 +100,7 @@ class BaseUserTenantValidationPolicy(ABC):
             self.storage.get_item_from_collection_by_id(collection, x_tenant_id) or {}
         )
         if x_tenant_raw.get("type") != "tenant":
-            raise Unauthorized(f"No tenant {x_tenant_id} exists.")
+            raise Forbidden(f"No tenant {x_tenant_id} exists.")
 
         return x_tenant_raw
 
@@ -116,7 +116,7 @@ class BaseUserTenantValidationPolicy(ABC):
                 tenant_defining_entity_id = relation["key"]
                 break
         if not tenant_defining_entity_id:
-            raise Unauthorized(
+            raise Forbidden(
                 f"{x_tenant_raw['_id']} has no relation with a tenant defining entity."
             )
 
