@@ -20,9 +20,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
         request: Request = request_context.http_request
-        if not regex.match(
-            "^(/[^/]+/v[0-9]+)?/[^/]+/(filter|filter_v2)$", request.path
-        ):
+        if not regex.match("^(/[^/]+/v[0-9]+)?/[^/]+/filter$", request.path):
             return policy_context
 
         if not isinstance(user_context.access_restrictions.filters, list):
@@ -32,6 +30,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
             policy_context.access_verdict = True
             return policy_context
 
+        policy_context.access_verdict = False
         for role in user_context.x_tenant.roles:
             permissions = get_permissions(role, user_context)
             if not permissions:
@@ -147,7 +146,7 @@ class PostRequestRules:
                 )
 
         if len(type_filter_values) == 0:
-            return None
+            return False
         user_context.access_restrictions.post_request_hook = (
             mask_protected_content_post_request_hook(user_context, permissions)
         )
