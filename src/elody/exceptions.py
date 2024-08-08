@@ -37,6 +37,8 @@ class NonUniqueException(Exception):
 class NotFoundException(Exception):
     pass
 
+class NoTenantException(Exception):
+    pass
 
 class UnsupportedVersionException(Exception):
     pass
