@@ -3,7 +3,7 @@ import re as regex
 from flask import Request
 from storage.storagemanager import StorageManager  # pyright: ignore
 from elody.util import get_item_metadata_value
-from elody.exceptions import NotFoundException
+from elody.exceptions import NotFoundException, NoTenantException
 
 
 class TenantIdResolver:
@@ -37,6 +37,8 @@ class TenantIdResolver:
             tenant_id = endpoint().get_tenant_id(request)
             if tenant_id != None:
                 relations = user.get("relations", [])
+                if len(relations) < 1:
+                    raise NoTenantException(f"User is not attached to a tenant")
                 has_tenant_relation = any(
                     relation.get("type") == "hasTenant"
                     and relation.get("key") == tenant_id
