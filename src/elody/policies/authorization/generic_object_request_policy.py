@@ -51,6 +51,9 @@ class PostRequestRules:
     ) -> bool | None:
         if request.method != "POST":
             return None
+        
+        if request.args.get("dry_run", False):
+            return True
 
         return handle_single_item_request(
             user_context, request.json, permissions, "create", request.json
