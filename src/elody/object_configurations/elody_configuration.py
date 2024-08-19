@@ -6,14 +6,12 @@ from elody.util import flatten_dict
 from uuid import uuid4
 
 
-class ElodyObjectConfiguration(BaseObjectConfiguration):
+class ElodyConfiguration(BaseObjectConfiguration):
     SCHEMA_TYPE = "elody"
     SCHEMA_VERSION = 1
 
     def crud(self):
         crud = {
-            "collection": "entities",
-            "collection_history": "history",
             "creator": lambda post_body, **kwargs: self._creator(post_body, **kwargs),
             "post_crud_hook": lambda **kwargs: self._post_crud_hook(**kwargs),
             "pre_crud_hook": lambda **kwargs: self._pre_crud_hook(**kwargs),

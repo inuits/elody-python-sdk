@@ -1,11 +1,11 @@
 from elody.object_configurations.elody_configuration import (
-    ElodyObjectConfiguration,
+    ElodyConfiguration,
 )
 from elody.util import send_cloudevent
 from os import getenv
 
 
-class JobConfiguration(ElodyObjectConfiguration):
+class JobConfiguration(ElodyConfiguration):
     SCHEMA_TYPE = "elody"
     SCHEMA_VERSION = 1
 
