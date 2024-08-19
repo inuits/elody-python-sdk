@@ -10,8 +10,8 @@ class BaseObjectConfiguration(ABC):
     @abstractmethod
     def crud(self):
         return {
-            "collection": "",
-            "collection_history": "",
+            "collection": "entities",
+            "collection_history": "history",
             "creator": lambda post_body, **kwargs: post_body,  # pyright: ignore
             "nested_matcher_builder": lambda object_lists, keys_info, value: self.__build_nested_matcher(
                 object_lists, keys_info, value
