@@ -1,3 +1,9 @@
+class DuplicateExternalLinkException(Exception):
+    def __init__(self, message, external_id=None):
+        super().__init__(message)
+        self.external_id = external_id
+
+
 class DuplicateFileException(Exception):
     def __init__(self, message, filename=None, md5sum=None):
         super().__init__(message)
