@@ -146,11 +146,16 @@ class Client:
         response = requests.get(url, headers=self.headers, proxies=self.proxies)
         return self.__handle_response(response, "Failed to get object")
 
-    def update_object(self, collection, identifier, payload):
+    def update_object(self, collection, identifier, payload, overwrite=True):
         url = f"{self.elody_collection_url}/{collection}/{identifier}"
-        response = requests.put(
-            url, json=payload, headers=self.headers, proxies=self.proxies
-        )
+        if overwrite:
+            response = requests.put(
+                url, json=payload, headers=self.headers, proxies=self.proxies
+            )
+        else:
+            response = requests.patch(
+                url, json=payload, headers=self.headers, proxies=self.proxies
+            )
         return self.__handle_response(response, "Failed to update object")
 
     def update_object_relations(self, collection, identifier, payload):
