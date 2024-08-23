@@ -2,7 +2,6 @@ import elody.util as util
 import json
 import os
 
-from elody.policies.permission_handler import set_permissions
 from importlib import import_module
 from inuits_policy_based_auth.exceptions import (
     PolicyFactoryException,
@@ -19,7 +18,10 @@ def load_apps(flask_app, logger):
 
 def load_policies(policy_factory, logger, permissions={}):
     if permissions:
+        from elody.policies.permission_handler import set_permissions
+
         set_permissions(permissions)
+
     apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST", ""), logger)
     for app in apps:
         try:
