@@ -18,6 +18,7 @@ class BaseObjectConfiguration(ABC):
             ),
             "post_crud_hook": lambda **kwargs: None,  # pyright: ignore
             "pre_crud_hook": lambda **kwargs: None,  # pyright: ignore
+            "storage_type": "db"
         }
 
     @abstractmethod
