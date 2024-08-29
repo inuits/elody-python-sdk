@@ -30,8 +30,10 @@ class Client:
         )
         return self.__handle_response(response, "Failed to create mediafile", "text")
 
-    def create_mediafile_with_filename(self, filename):
+    def create_mediafile_with_filename(self, filename, institution_id=None):
         data = {"filename": filename, "type": "mediafile"}
+        if institution_id:
+            data.update({"metadata": [{"key": "institution", "value": institution_id}]})
         req = requests.post(
             f"{self.elody_collection_url}/mediafiles",
             json=data,
