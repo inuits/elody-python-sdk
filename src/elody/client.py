@@ -56,10 +56,17 @@ class Client:
         return req.text.strip().replace('"', "")
 
     def __get_upload_location(
-        self, entity_id, filename, is_public=True, identifiers=None
+        self,
+        entity_id,
+        filename,
+        is_public=True,
+        identifiers=None,
+        mediafile_object=None,
     ):
         if not identifiers:
             identifiers = list()
+        if not mediafile_object:
+            mediafile_object = dict()
         metadata = []
         if is_public:
             metadata = [
@@ -69,9 +76,12 @@ class Client:
                 }
             ]
         mediafile = {
-            "filename": filename,
-            "metadata": metadata,
-            "identifiers": identifiers,
+            **{
+                "filename": filename,
+                "metadata": metadata,
+                "identifiers": identifiers,
+            },
+            **mediafile_object,
         }
         return self.__create_mediafile(entity_id, mediafile)
 
@@ -174,13 +184,14 @@ class Client:
         file_url,
         identifiers=None,
         upload_location_replace_map=None,
+        mediafile_object=None,
     ):
         if not identifiers:
             identifiers = list()
         if not upload_location_replace_map:
             upload_location_replace_map = dict()
         upload_location = self.__get_upload_location(
-            entity_id, filename, True, identifiers
+            entity_id, filename, True, identifiers, mediafile_object
         )
         for current_location, new_location in upload_location_replace_map.items():
             upload_location = upload_location.replace(current_location, new_location)
