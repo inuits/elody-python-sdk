@@ -80,6 +80,7 @@ class BaseRequest:
             # TODO Mediafile should have a link to an asset
             "mediafile",
             "savedSearch",
+            "original_data",
         ]
 
     def _get_tenant_id_from_entity(self, entity_id):
