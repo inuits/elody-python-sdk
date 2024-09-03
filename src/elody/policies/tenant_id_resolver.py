@@ -126,6 +126,10 @@ class BaseRequest:
             return "tenant:super"
         if item.get("type") in self.global_types or item.get("type") == "institution":
             return "tenant:super"
+        if item.get("type") == "asset":
+            for relation in item.get("relations", []):
+                if relation.get("type") in ["hasArchesLink"]:
+                    return "tenant:super"
         institution_id = get_item_metadata_value(item, "institution")
         if not institution_id:
             for relation in item.get("relations", []):
