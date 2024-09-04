@@ -3,6 +3,7 @@ import re as regex
 from abc import ABC, abstractmethod
 from configuration import get_object_configuration_mapper  # pyright: ignore
 from copy import deepcopy
+from elody.util import get_raw_id
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
@@ -46,6 +47,7 @@ class BaseUserTenantValidationPolicy(ABC):
         self, user_context: UserContext, user: dict
     ):
         self.user = user
+        user_context.id = get_raw_id(user)
         user_context.x_tenant = Tenant()
         user_context.x_tenant.id = self.super_tenant_id
         user_context.x_tenant.roles = ["anonymous"]
