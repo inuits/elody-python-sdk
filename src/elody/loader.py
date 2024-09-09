@@ -2,6 +2,7 @@ import elody.util as util
 import json
 import os
 
+from apscheduler.triggers.cron import CronTrigger
 from importlib import import_module
 from inuits_policy_based_auth.exceptions import (
     PolicyFactoryException,
@@ -14,6 +15,24 @@ def load_apps(flask_app, logger):
         for resource in apps[app].get("resources", []):
             api_bp = import_module(f"apps.{app}.resources.{resource}").api_bp
             flask_app.register_blueprint(api_bp)
+
+
+def load_jobs(scheduler, logger):
+    apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
+    for app in apps:
+        for job, job_properties in apps[app].get("jobs", {}).items():
+            try:
+                job_class = __get_class_from_module(
+                    import_module(f"apps.{app}.cron_jobs.{job}")
+                )
+                scheduler.add_job(
+                    job_class(),
+                    CronTrigger.from_crontab(
+                        job_properties.get("expression", "0 0 * * *")
+                    ),
+                )
+            except ModuleNotFoundError:
+                pass
 
 
 def load_policies(policy_factory, logger, permissions={}):
@@ -69,9 +88,13 @@ def __get_class(app, auth_type, policy_module_name):
             pass
     else:
         raise ModuleNotFoundError(f"Policy {policy_module_name} not found")
-    policy_class_name = module.__name__.split(".")[-1].title().replace("_", "")
-    policy = getattr(module, policy_class_name)
+    policy = __get_class_from_module(module)
     return policy
+
+
+def __get_class_from_module(module):
+    class_name = module.__name__.split(".")[-1].title().replace("_", "")
+    return getattr(module, class_name)
 
 
 def __instantiate_authentication_policy(policy_module_name, policy, logger):
