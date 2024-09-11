@@ -123,6 +123,7 @@ class CSVMultiObject(CSVParser):
         object_field_mapping=None,
         required_metadata_values=None,
         metadata_field_mapping=None,
+        include_indexed_field=False,
     ):
         super().__init__(csvstring)
         self.index_mapping = index_mapping if index_mapping else dict()
@@ -137,6 +138,7 @@ class CSVMultiObject(CSVParser):
         )
         self.objects = dict()
         self.errors = dict()
+        self.include_indexed_field = include_indexed_field
         self.__fill_objects_from_csv()
 
     def get_entities(self):
@@ -196,6 +198,7 @@ class CSVMultiObject(CSVParser):
                         indexed_dict[type][id][key] = value
                     elif (
                         key not in self.index_mapping.values()
+                        or self.include_indexed_field
                         and self.__field_allowed(type, key, value)
                     ):
                         # Map the metadata field to a unified key if applicable
