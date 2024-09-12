@@ -1,6 +1,7 @@
 import re as regex
 
 from flask import Request
+from flask_restful import abort
 from storage.storagemanager import StorageManager  # pyright: ignore
 from elody.util import get_item_metadata_value
 from elody.exceptions import NotFoundException, NoTenantException
@@ -90,7 +91,7 @@ class BaseRequest:
         )
         entity = self.storage.get_item_from_collection_by_id("entities", entity_id)
         if not entity:
-            raise NotFoundException(f"The asset with id {entity_id} doesn't exists")
+            abort(404, message=f"Item with id {entity_id} doesn't exist")
         type = entity.get("type")
         if type in self.global_types:
             return "tenant:super"
@@ -111,7 +112,7 @@ class BaseRequest:
 
         if entity and get_item_metadata_value(entity, "institution"):
             return f"tenant:{get_item_metadata_value(entity, 'institution')}"
-        raise Exception("Entity has no tenant, and is suppose to have one.")
+        abort(400, message="Entity has no tenant, and is suppose to have one.")
 
     def _get_tenant_id_from_mediafile(self, mediafile_id):
         mediafile_relations = self.storage.get_collection_item_relations(
@@ -139,7 +140,7 @@ class BaseRequest:
                     institution_id = relation.get("key")
         if institution_id:
             return f"tenant:{institution_id}"
-        raise Exception(f"Item in body doesn't have an institution.")
+        abort(400, message="Item in body doesn't have an institution.")
 
 
 class EntityGetRequest(BaseRequest):
