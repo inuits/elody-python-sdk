@@ -128,6 +128,16 @@ def mediafile_is_public(mediafile):
     ] or copyright_color.lower() in ["green", "groen"]
 
 
+def parse_string_to_bool(value):
+    if isinstance(value, str):
+        value_lower = value.strip().lower()
+        if value_lower in ["true", "yes", "1", "y"]:
+            return True
+        elif value_lower in ["false", "no", "0", "n"]:
+            return False
+    return value
+
+
 def read_json_as_dict(filename, logger):
     try:
         with open(filename) as file:
