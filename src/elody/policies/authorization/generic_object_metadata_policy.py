@@ -1,13 +1,11 @@
 import re as regex
 
-from configuration import get_object_configuration_mapper  # pyright: ignore
-from elody.policies.helpers import get_item
+from elody.policies.helpers import get_content, get_item
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
 )
 from flask import Request  # pyright: ignore
-from flask_restful import abort  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
     PolicyContext,
@@ -15,7 +13,6 @@ from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignor
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
-from serialization.serialize import serialize  # pyright: ignore
 from storage.storagemanager import StorageManager  # pyright: ignore
 
 
@@ -65,12 +62,7 @@ class PutRequestRules:
         if request.method != "PUT":
             return None
 
-        content = serialize(
-            {"metadata": request.json},
-            type=item.get("type"),
-            from_format="elody",
-            to_format=get_object_configuration_mapper().get(item["type"]).SCHEMA_TYPE,
-        )
+        content = get_content(item, request, {"metadata": request.json})
         return handle_single_item_request(
             user_context, item, permissions, "update", content
         )
@@ -83,12 +75,7 @@ class PatchRequestRules:
         if request.method != "PATCH":
             return None
 
-        content = serialize(
-            {"metadata": request.json},
-            type=item.get("type"),
-            from_format="elody",
-            to_format=get_object_configuration_mapper().get(item["type"]).SCHEMA_TYPE,
-        )
+        content = get_content(item, request, {"metadata": request.json})
         return handle_single_item_request(
             user_context, item, permissions, "update", content
         )

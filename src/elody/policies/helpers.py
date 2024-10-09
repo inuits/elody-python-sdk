@@ -1,4 +1,17 @@
+from configuration import get_object_configuration_mapper  # pyright: ignore
 from flask_restful import abort  # pyright: ignore
+from serialization.serialize import serialize  # pyright: ignore
+
+
+def get_content(item, request, content):
+    return serialize(
+        content,
+        type=item.get("type"),
+        from_format=serialize.get_format(
+            (request.view_args or {}).get("spec", "elody"), request.args
+        ),
+        to_format=get_object_configuration_mapper().get(item["type"]).SCHEMA_TYPE,
+    )
 
 
 def get_item(storage_manager, user_context_bag, view_args):

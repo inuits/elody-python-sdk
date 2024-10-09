@@ -1,5 +1,6 @@
 import re as regex
 
+from elody.policies.helpers import get_content
 from configuration import get_object_configuration_mapper  # pyright: ignore
 from elody.policies.permission_handler import (
     get_permissions,
@@ -51,12 +52,13 @@ class PostRequestRules:
     ) -> bool | None:
         if request.method != "POST":
             return None
-        
+
         if request.args.get("dry_run", False):
             return True
 
+        content = get_content(request.json, request, request.json)
         return handle_single_item_request(
-            user_context, request.json, permissions, "create", request.json
+            user_context, request.json, permissions, "create", content
         )
 
 

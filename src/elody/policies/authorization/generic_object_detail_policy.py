@@ -1,12 +1,11 @@
 import re as regex
 
-from elody.policies.helpers import get_item
+from elody.policies.helpers import get_content, get_item
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
 )
 from flask import Request  # pyright: ignore
-from flask_restful import abort  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
     PolicyContext,
@@ -79,8 +78,9 @@ class PutRequestRules:
         if request.method != "PUT":
             return None
 
+        content = get_content(item, request, request.json)
         return handle_single_item_request(
-            user_context, item, permissions, "update", request.json  # pyright: ignore
+            user_context, item, permissions, "update", content
         )
 
 
@@ -91,8 +91,9 @@ class PatchRequestRules:
         if request.method != "PATCH":
             return None
 
+        content = get_content(item, request, request.json)
         return handle_single_item_request(
-            user_context, item, permissions, "update", request.json  # pyright: ignore
+            user_context, item, permissions, "update", content
         )
 
 

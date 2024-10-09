@@ -12,13 +12,13 @@ class BaseObjectConfiguration(ABC):
         return {
             "collection": "entities",
             "collection_history": "history",
-            "creator": lambda post_body, **kwargs: post_body,  # pyright: ignore
+            "creator": lambda post_body, **kwargs: post_body,
             "nested_matcher_builder": lambda object_lists, keys_info, value: self.__build_nested_matcher(
                 object_lists, keys_info, value
             ),
-            "post_crud_hook": lambda **kwargs: None,  # pyright: ignore
-            "pre_crud_hook": lambda **kwargs: None,  # pyright: ignore
-            "storage_type": "db"
+            "post_crud_hook": lambda **kwargs: None,
+            "pre_crud_hook": lambda **kwargs: None,
+            "storage_type": "db",
         }
 
     @abstractmethod
@@ -60,7 +60,7 @@ class BaseObjectConfiguration(ABC):
 
     @abstractmethod
     def validation(self):
-        def validator(http_method, content, **_):  # pyright: ignore
+        def validator(http_method, content, **_):
             pass
 
         return "function", validator
