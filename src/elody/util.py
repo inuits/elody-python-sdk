@@ -8,6 +8,39 @@ from copy import deepcopy
 from datetime import datetime, timezone
 
 
+URL_UNFRIENDLY_CHARS = {
+    " ": "%20",
+    "!": "%21",
+    "'": "%22",
+    "#": "%23",
+    "%": "%25",
+    "&": "%26",
+    '"': "%27",
+    "(": "%28",
+    ")": "%29",
+    "*": "%2A",
+    "+": "%2B",
+    ",": "%2C",
+    ".": "%2E",
+    "/": "%2F",
+    ";": "%3B",
+    "<": "%3C",
+    "=": "%3D",
+    ">": "%3E",
+    "?": "%3F",
+    "@": "%40",
+    "[": "%5B",
+    "\\": "%5C",
+    "]": "%5D",
+    "^": "%5E",
+    "`": "%60",
+    "{": "%7B",
+    "|": "%7C",
+    "}": "%7D",
+    "~": "%7E",
+}
+
+
 class CustomJSONEncoder(json.JSONEncoder):
     def __convert_datetime(self, obj):
         if obj.tzinfo is None:
@@ -145,6 +178,23 @@ def read_json_as_dict(filename, logger):
     except (FileNotFoundError, json.JSONDecodeError) as ex:
         logger.error(f"Could not read {filename} as a dict: {ex}")
     return {}
+
+
+def parse_url_unfriendly_string(
+    input: str, *, replace_char=None, return_unfriendly_chars=False
+):
+    unfriendly_chars = []
+    for char, encoded in URL_UNFRIENDLY_CHARS.items():
+        parsed_input = input.replace(
+            char, encoded if replace_char is None else replace_char
+        )
+        if input != parsed_input:
+            unfriendly_chars.append(char)
+        input = parsed_input
+
+    if return_unfriendly_chars:
+        return input, unfriendly_chars
+    return input
 
 
 def send_cloudevent(mq_client, source, routing_key, data):
