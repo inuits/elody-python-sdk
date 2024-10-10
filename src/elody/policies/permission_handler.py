@@ -167,7 +167,7 @@ def __is_allowed_to_crud_item_keys(
     object_lists,
     flat_request_body: dict = {},
 ):
-    user_context.bag["soft_call_response_body"] = []
+    user_context.bag["restricted_keys"] = []
     restrictions = restrictions_schema.get("key_restrictions", {})
 
     for restricted_key, restricting_conditions in restrictions.items():
@@ -195,10 +195,10 @@ def __is_allowed_to_crud_item_keys(
                 element[info["key"]] = "[protected content]"  # pyright: ignore
             else:
                 if flat_request_body.get(restricted_key):
-                    user_context.bag["soft_call_response_body"].append(restricted_key)
+                    user_context.bag["restricted_keys"].append(restricted_key)
 
     user_context.bag["requested_item"] = item_in_storage_format
-    return len(user_context.bag["soft_call_response_body"]) == 0
+    return len(user_context.bag["restricted_keys"]) == 0
 
 
 def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict = {}):
