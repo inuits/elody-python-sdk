@@ -17,7 +17,9 @@ def get_content(item, request, content):
 def get_item(storage_manager, user_context_bag, view_args):
     view_args = view_args or {}
     id = view_args.get("id")
-    resolve_collections = user_context_bag["collection_resolver"]
+    resolve_collections = user_context_bag.get("collection_resolver")
+    if not resolve_collections:
+        abort(403, message=f"Collection resolver not defined for user.")
     collections = resolve_collections(collection=view_args.get("collection"), id=id)
     for collection in collections:
         if item := storage_manager.get_db_engine().get_item_from_collection_by_id(
