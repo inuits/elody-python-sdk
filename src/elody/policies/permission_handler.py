@@ -207,7 +207,8 @@ def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict
         key = key[1:]
         negate_condition = True
 
-    item_value = flat_request_body.get(key, flat_item.get("key", ""))
+    # this is temporary, #128408 will introduce optional restrictions, removing the need of a fallback as this causes wrong behavior in certain circumstances
+    item_value = flat_request_body.get(key, flat_item.get(key, ""))
     expected_values = []
     for value in values:
         if flat_item_key_value := flat_item.get(value):
