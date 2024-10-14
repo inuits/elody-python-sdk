@@ -6,6 +6,7 @@ from elody.exceptions import (
     ColumnNotFoundException,
     IncorrectTypeException,
     InvalidObjectException,
+    InvalidValueException,
 )
 from elody.validator import validate_json
 from elody.schemas import entity_schema, mediafile_schema
@@ -206,6 +207,11 @@ class CSVMultiObject(CSVParser):
                         if metadata_info.get("target") == type or not metadata_info:
                             metadata_key = metadata_info.get("map_to", key)
                             indexed_dict[type][id].setdefault("metadata", list())
+                            options = metadata_info.get("value_options")
+                            if options and value not in options:
+                                raise InvalidValueException(
+                                    f"The value \"{value}\" is invalid, these are the valid values: {options}"
+                                )
                             indexed_dict[type][id]["metadata"].append(
                                 self._get_metadata_object(metadata_key, value)
                             )
