@@ -99,7 +99,10 @@ class BaseObjectConfiguration(ABC):
                 return data
 
         for key, value in self.document_info()["object_lists"].items():
-            document[key] = sorted(document[key], key=lambda property: property[value])
+            if document.get(key):
+                document[key] = sorted(
+                    document[key], key=lambda property: property[value]
+                )
         sort_keys(document)
 
     def __build_nested_matcher(self, object_lists, keys_info, value, index=0):
