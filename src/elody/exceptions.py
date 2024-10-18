@@ -31,8 +31,10 @@ class InvalidExtensionException(Exception):
 class InvalidObjectException(Exception):
     pass
 
+
 class InvalidValueException(Exception):
     pass
+
 
 class NoMediafilesException(Exception):
     pass

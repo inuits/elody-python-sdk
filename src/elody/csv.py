@@ -210,7 +210,7 @@ class CSVMultiObject(CSVParser):
                             options = metadata_info.get("value_options")
                             if options and value not in options:
                                 raise InvalidValueException(
-                                    f"The value \"{value}\" is invalid, these are the valid values: {options}"
+                                    f'The value "{value}" is invalid, these are the valid values: {options}'
                                 )
                             indexed_dict[type][id]["metadata"].append(
                                 self._get_metadata_object(metadata_key, value)
