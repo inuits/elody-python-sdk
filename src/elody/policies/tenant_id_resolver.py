@@ -1,5 +1,6 @@
 import re as regex
 
+from elody.error_codes import ErrorCode, get_error_code, get_read, get_write
 from flask import Request
 from flask_restful import abort
 from storage.storagemanager import StorageManager  # pyright: ignore
@@ -91,7 +92,10 @@ class BaseRequest:
         )
         entity = self.storage.get_item_from_collection_by_id("entities", entity_id)
         if not entity:
-            abort(404, message=f"Item with id {entity_id} doesn't exist")
+            abort(
+                404,
+                message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {entity_id} doesn't exist",
+            )
         type = entity.get("type")
         if type in self.global_types:
             return "tenant:super"
@@ -112,7 +116,10 @@ class BaseRequest:
 
         if entity and get_item_metadata_value(entity, "institution"):
             return f"tenant:{get_item_metadata_value(entity, 'institution')}"
-        abort(400, message="Entity has no tenant, and is suppose to have one.")
+        abort(
+            400,
+            message=f"{get_error_code(ErrorCode.ENTITY_HAS_NO_TENANT, get_read())} Entity has no tenant, and is suppose to have one.",
+        )
 
     def _get_tenant_id_from_mediafile(self, mediafile_id):
         mediafile_relations = self.storage.get_collection_item_relations(
@@ -140,7 +147,10 @@ class BaseRequest:
                     institution_id = relation.get("key")
         if institution_id:
             return f"tenant:{institution_id}"
-        abort(400, message="Item in body doesn't have an institution.")
+        abort(
+            400,
+            message=f"{get_error_code(ErrorCode.ENTITY_HAS_NO_TENANT, get_read())} Item in body doesn't have an institution.",
+        )
 
 
 class EntityGetRequest(BaseRequest):

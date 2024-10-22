@@ -1,5 +1,6 @@
 import re as regex
 
+from elody.error_codes import ErrorCode, get_error_code, get_read
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
@@ -35,7 +36,7 @@ class MediafileDownloadPolicy(BaseAuthorizationPolicy):
         if not item:
             abort(
                 404,
-                message=f"Item with id {id} doesn't exist in collection {collection}",
+                message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {id} doesn't exist in collection {collection}",
             )
 
         for role in user_context.x_tenant.roles:
