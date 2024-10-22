@@ -1,3 +1,4 @@
+from elody.error_codes import ErrorCode, get_error_code, get_read, get_write
 from configuration import get_collection_mapper
 from flask_restful import abort
 from inuits_policy_based_auth import BaseAuthorizationPolicy, RequestContext
@@ -48,7 +49,7 @@ class MultiTenantPolicy(BaseAuthorizationPolicy):
             if not item:
                 abort(
                     404,
-                    message=f"Item with id {id} doesn't exist in collection {collection}",
+                    message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {id} doesn't exist in collection {collection}",
                 )
             item_relations = storage.get_collection_item_relations(collection, item_id)
             if (
