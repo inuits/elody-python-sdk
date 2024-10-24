@@ -122,7 +122,15 @@ class PostRequestRules:
                 restrictions = schemas[schema].get("object_restrictions", {})
                 for restricted_key, restricting_value in restrictions.items():
                     index, restricted_key = restricted_key.split(":")
+                    prefix = ""
+                    if restricted_key[0] == "!":
+                        restricted_key = restricted_key[1:]
+                        prefix += "!"
+                    if restricted_key[0] == "?":
+                        restricted_key = restricted_key[1:]
+                        prefix += "?"
                     key = f"{schema}|{restricted_key}"
+
                     if group := restrictions_grouped_by_index.get(index):
                         group["key"].append(key)
                     else:
@@ -131,6 +139,7 @@ class PostRequestRules:
                                 index: {
                                     "key": [key],
                                     "value": restricting_value,
+                                    "prefix": prefix,
                                 }
                             }
                         )
@@ -142,8 +151,18 @@ class PostRequestRules:
                         "key": restriction["key"],
                         "value": restriction["value"],
                         "match_exact": True,
+                        "operator": "or" if restriction["prefix"] == "?" else "and",
                     }
                 )
+                if restriction["prefix"] == "?":
+                    user_context.access_restrictions.filters.append(  # pyright: ignore
+                        {
+                            "type": "text",
+                            "key": restriction["key"],
+                            "value": "",
+                            "operator": "or",
+                        }
+                    )
 
         if len(type_filter_values) == 0:
             return False

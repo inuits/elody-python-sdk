@@ -20,7 +20,10 @@ def get_item(storage_manager, user_context_bag, view_args):
     id = view_args.get("id")
     resolve_collections = user_context_bag.get("collection_resolver")
     if not resolve_collections:
-        abort(403, message=f"{get_error_code(ErrorCode.UNDEFINED_COLLECTION_RESOLVER, get_read())} Collection resolver not defined for user.")
+        abort(
+            403,
+            message=f"{get_error_code(ErrorCode.UNDEFINED_COLLECTION_RESOLVER, get_read())} Collection resolver not defined for user.",
+        )
     collections = resolve_collections(collection=view_args.get("collection"), id=id)
     for collection in collections:
         if item := storage_manager.get_db_engine().get_item_from_collection_by_id(
@@ -28,4 +31,7 @@ def get_item(storage_manager, user_context_bag, view_args):
         ):
             return item
     else:
-        abort(404, message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {id} does not exist.")
+        abort(
+            404,
+            message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {id} does not exist.",
+        )

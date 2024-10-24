@@ -2,6 +2,7 @@ import re as regex
 
 from configuration import get_object_configuration_mapper  # pyright: ignore
 from copy import deepcopy
+from elody.error_codes import ErrorCode, get_error_code, get_read
 from elody.util import flatten_dict, interpret_flat_key
 from inuits_policy_based_auth.contexts.user_context import UserContext
 from logging_elody.log import log  # pyright: ignore
@@ -203,12 +204,24 @@ def __is_allowed_to_crud_item_keys(
 
 def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict = {}):
     negate_condition = False
+    is_optional = False
+
     if key[0] == "!":
         key = key[1:]
         negate_condition = True
+    if key[0] == "?":
+        key = key[1:]
+        is_optional = True
 
-    # this is temporary, #128408 will introduce optional restrictions, removing the need of a fallback as this causes wrong behavior in certain circumstances
-    item_value = flat_request_body.get(key, flat_item.get(key, ""))
+    try:
+        item_value = flat_request_body.get(key, flat_item[key])
+    except KeyError:
+        if not is_optional:
+            raise Exception(
+                f"{get_error_code(ErrorCode.METADATA_KEY_UNDEFINED, get_read())} Key {key} not found in document {flat_item['_id']}. Either prefix the key with '?' in your permission configuration to make it an optional restriction, or patch the document to include the key. '?' will allow access if key does not exist, '!?' will deny access if key does not exist."
+            )
+        return not negate_condition
+
     expected_values = []
     for value in values:
         if flat_item_key_value := flat_item.get(value):
