@@ -197,9 +197,9 @@ def parse_url_unfriendly_string(
     return input
 
 
-def send_cloudevent(mq_client, source, routing_key, data):
+def send_cloudevent(mq_client, source, routing_key, data, exchange_name=None):
     event = to_dict(CloudEvent({"source": source, "type": routing_key}, data))
-    mq_client.send(event, routing_key=routing_key)
+    mq_client.send(event, routing_key=routing_key, exchange_name=exchange_name)
 
 
 def signal_child_relation_changed(mq_client, collection, id):
