@@ -69,6 +69,9 @@ class ErrorCode(Enum):
     # Migration error codes
     UNABLE_TO_UPDATE_SCHEMA_VERSION = "7001"
     LAZY_MIGRATION_SCHEMA_TYPE_MISMATCH = "7002"
+    
+    # External Services
+    SERVICE_UNAVAILABLE = "8001"
 
     # Arches error codes
     ARCHES_ERROR = "11000"
