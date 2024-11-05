@@ -13,7 +13,7 @@ from elody.schemas import entity_schema, mediafile_schema
 
 
 class CSVParser:
-    top_level_fields = ["type", "filename"]
+    top_level_fields = ["type", "filename", "file_identifier"]
     identifier_fields = ["identifiers", "identifier", "object_id", "entity_id"]
     schema_mapping = {
         "entity": entity_schema,
@@ -125,6 +125,8 @@ class CSVMultiObject(CSVParser):
         required_metadata_values=None,
         metadata_field_mapping=None,
         include_indexed_field=False,
+        top_level_fields_mapping=None,
+        external_file_sources=None,
     ):
         super().__init__(csvstring)
         self.index_mapping = index_mapping if index_mapping else dict()
@@ -140,13 +142,23 @@ class CSVMultiObject(CSVParser):
         self.objects = dict()
         self.errors = dict()
         self.include_indexed_field = include_indexed_field
+        self.top_level_fields_mapping = (
+            top_level_fields_mapping if top_level_fields_mapping else dict()
+        )
+        self.external_file_sources = (
+            external_file_sources if external_file_sources else []
+        )
         self.__fill_objects_from_csv()
+        self.__rename_top_level_fields()
 
     def get_entities(self):
         return self.objects.get("entities", list())
 
     def get_errors(self):
         return self.errors
+
+    def get_top_level_fields_mapping(self, type):
+        return self.top_level_fields_mapping.get(type, {})
 
     def get_mediafiles(self):
         return self.objects.get("mediafiles", list())
@@ -171,7 +183,9 @@ class CSVMultiObject(CSVParser):
 
     def __fill_objects_from_csv(self):
         indexed_dict = dict()
+        external_mediafiles_ids = []
         for row in self.reader:
+            external_mediafiles = False
             missing_columns = [x for x in self.index_mapping.values() if x not in row.keys()]
             if missing_columns:
                 raise ColumnNotFoundException(
@@ -189,9 +203,28 @@ class CSVMultiObject(CSVParser):
                 if previous_id:
                     indexed_dict[type][id]["matching_id"] = previous_id
                 previous_id = id
+                file_source = None
                 for key, value in row.items():
                     if not value:
                         continue
+                    if key == "file_source":
+                        file_source = value
+                    if (
+                        key == "file_identifier"
+                        and file_source in self.external_file_sources
+                    ):
+                        if (
+                            indexed_dict[type][id]["matching_id"]
+                            not in external_mediafiles_ids
+                        ):
+                            external_mediafiles_ids.append(
+                                indexed_dict[type][id]["matching_id"]
+                            )
+                        external_mediafiles = True
+                        if "entities" not in indexed_dict:
+                            indexed_dict["entities"] = dict()
+                        if id in indexed_dict["entities"]:
+                            indexed_dict["entities"][id]["file_identifier"] = value
                     if self._is_relation_field(key) and self.__field_allowed(
                         type, key, value
                     ):
@@ -230,6 +263,12 @@ class CSVMultiObject(CSVParser):
         self.__add_required_fields(indexed_dict)
         for object_type, objects in indexed_dict.items():
             self.objects[object_type] = list(objects.values())
+        if external_mediafiles:
+            self.objects["mediafiles"] = [
+                mediafile
+                for mediafile in self.objects["mediafiles"]
+                if mediafile["matching_id"] not in external_mediafiles_ids
+            ]
 
     def __add_required_fields(self, indexed_dict):
         if not self.required_metadata_values:
@@ -264,3 +303,18 @@ class CSVMultiObject(CSVParser):
                     )
             for error_id in error_ids:
                 del objects[error_id]
+
+    def __rename_top_level_fields(self):
+        def rename_fields(items, mapping):
+            for item in items:
+                for old_key, new_key in mapping.items():
+                    if old_key in item:
+                        item[new_key] = item.pop(old_key)
+
+        mediafiles = self.get_mediafiles()
+        entities = self.get_entities()
+        mediafiles_mapping = self.get_top_level_fields_mapping("mediafiles")
+        entities_mapping = self.get_top_level_fields_mapping("entities")
+
+        rename_fields(mediafiles, mediafiles_mapping)
+        rename_fields(entities, entities_mapping)
