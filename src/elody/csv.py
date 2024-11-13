@@ -213,14 +213,9 @@ class CSVMultiObject(CSVParser):
                         key == "file_identifier"
                         and file_source in self.external_file_sources
                     ):
-                        if (
-                            indexed_dict[type][id]["matching_id"]
-                            not in external_mediafiles_ids
-                        ):
-                            external_mediafiles_ids.append(
-                                indexed_dict[type][id]["matching_id"]
-                            )
-                        external_mediafiles = True
+                        matching_id = indexed_dict[type][id]["matching_id"]
+                        if not any(matching_id in id for id in external_mediafiles_ids):
+                            external_mediafiles_ids.append({matching_id: file_source})
                         if "entities" not in indexed_dict:
                             indexed_dict["entities"] = dict()
                         if id in indexed_dict["entities"]:
@@ -263,12 +258,15 @@ class CSVMultiObject(CSVParser):
         self.__add_required_fields(indexed_dict)
         for object_type, objects in indexed_dict.items():
             self.objects[object_type] = list(objects.values())
-        if external_mediafiles:
-            self.objects["mediafiles"] = [
-                mediafile
-                for mediafile in self.objects["mediafiles"]
-                if mediafile["matching_id"] not in external_mediafiles_ids
-            ]
+        if external_mediafiles_ids:
+            for mediafile in self.objects["mediafiles"]:
+                matching_id = mediafile["matching_id"]
+                for entry in external_mediafiles_ids:
+                    if matching_id in entry:
+                        file_source = entry[matching_id]
+                        dynamic_key = f"is_{file_source}_mediafile"
+                        mediafile[dynamic_key] = True
+                        break
 
     def __add_required_fields(self, indexed_dict):
         if not self.required_metadata_values:
