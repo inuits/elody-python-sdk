@@ -76,6 +76,7 @@ class ErrorCode(Enum):
     # Arches error codes
     ARCHES_ERROR = "11000"
     ARCHES_CONNECTION_UNAVAILABLE = "11001"
+    ARCHES_RECORD_NOT_FOUND = "11002"
 
 
 def get_error_code(error_code, prefix):
