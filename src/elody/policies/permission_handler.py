@@ -186,7 +186,7 @@ def __is_allowed_to_crud_item_keys(
                 keys_info = interpret_flat_key(restricted_key, object_lists)
                 element = item_in_storage_format
                 for info in keys_info:
-                    if info["is_object_list"]:
+                    if info["object_list"]:
                         element = __get_element_from_object_list_of_item(
                             element,
                             info["key"],

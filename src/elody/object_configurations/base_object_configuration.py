@@ -106,21 +106,20 @@ class BaseObjectConfiguration(ABC):
         sort_keys(document)
 
     def __build_nested_matcher(self, object_lists, keys_info, value, index=0):
-        if index == 0 and not any(info["is_object_list"] for info in keys_info):
+        if index == 0 and not any(info["object_list"] for info in keys_info):
             if value in ["ANY_MATCH", "NONE_MATCH"]:
                 value = {"$exists": value == "ANY_MATCH"}
             return {".".join(info["key"] for info in keys_info): value}
 
         info = keys_info[index]
 
-        if info["is_object_list"]:
-            nested_matcher = self.__build_nested_matcher(
-                object_lists, keys_info, value, index + 1
-            )
+        if info["object_list"]:
             elem_match = {
                 "$elemMatch": {
-                    object_lists[info["key"]]: info["object_key"],
-                    keys_info[index + 1]["key"]: nested_matcher,
+                    object_lists[info["object_list"]]: info["object_key"],
+                    **self.__build_nested_matcher(
+                        object_lists, keys_info[index + 1 :], value, 0
+                    ),
                 }
             }
             if value in ["ANY_MATCH", "NONE_MATCH"]:
@@ -129,7 +128,7 @@ class BaseObjectConfiguration(ABC):
                     return {"NOR_MATCHER": [{info["key"]: {"$all": [elem_match]}}]}
             return elem_match if index > 0 else {info["key"]: {"$all": [elem_match]}}
 
-        return value
+        raise Exception(f"Unable to build nested matcher. See keys_info: {keys_info}")
 
     def __merge_object_lists(self, source, target, key):
         for target_item in target:

@@ -119,7 +119,7 @@ class GetRequestRules:
 def _build_nested_matcher(object_lists, keys_info, value, index=0):
     info = keys_info[index]
 
-    if info["is_object_list"]:
+    if info["object_list"]:
         nested_matcher = _build_nested_matcher(
             object_lists, keys_info, value, index + 1
         )

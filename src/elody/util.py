@@ -1,5 +1,6 @@
 import json
 import mimetypes
+import re as regex
 
 from cloudevents.conversion import to_dict
 from cloudevents.http import CloudEvent
@@ -129,23 +130,27 @@ def interpret_flat_key(flat_key: str, object_lists):
     keys_info = []
     index = 0
 
-    flat_key_parts = flat_key.split(".")
+    flat_key_parts = regex.split(r"\.(?=(?:[^`]*`[^`]*`)*[^`]*$)", flat_key)
     while index < len(flat_key_parts):
         info = {
             "key": flat_key_parts[index],
-            "is_object_list": flat_key_parts[index] in object_lists.keys(),
+            "object_list": (
+                flat_key_parts[index]
+                if flat_key_parts[index] in object_lists.keys()
+                else ""
+            ),
         }
 
-        if info["is_object_list"]:
+        if info["object_list"]:
             combined_key = "".join(
-                [f"{info['key']}." for info in keys_info if not info["is_object_list"]]
+                [f"{info['key']}." for info in keys_info if not info["object_list"]]
             )
             info["key"] = f"{combined_key}{info['key']}"
             info["object_key"] = flat_key_parts[index + 1]
-            keys_info = [info for info in keys_info if info["is_object_list"]]
+            keys_info = [info for info in keys_info if info["object_list"]]
 
         keys_info.append(info)
-        index += 2 if info["is_object_list"] else 1
+        index += 2 if info["object_list"] else 1
 
     return keys_info
 
