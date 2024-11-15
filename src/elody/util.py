@@ -7,6 +7,7 @@ from cloudevents.http import CloudEvent
 from collections.abc import MutableMapping, Iterable
 from copy import deepcopy
 from datetime import datetime, timezone
+from os import getenv
 
 
 URL_UNFRIENDLY_CHARS = {
@@ -203,7 +204,10 @@ def parse_url_unfriendly_string(
 
 def send_cloudevent(mq_client, source, routing_key, data, exchange_name=None):
     event = to_dict(CloudEvent({"source": source, "type": routing_key}, data))
-    mq_client.send(event, routing_key=routing_key, exchange_name=exchange_name)
+    if getenv("AMQP_MANAGER", "amqpstorm_flask") in ["amqpstorm_flask"]:
+        mq_client.send(event, routing_key=routing_key, exchange_name=exchange_name)
+    else:
+        mq_client.send(event, routing_key=routing_key)
 
 
 def signal_child_relation_changed(mq_client, collection, id):
