@@ -48,7 +48,7 @@ class CSVParser:
         return StringIO(self.csvstring)
 
     def __get_reader_from_csv(self, csv_file):
-        csv_dialect = csv.Sniffer().sniff(csv_file.read(1024))
+        csv_dialect = csv.Sniffer().sniff(csv_file.read())
         csv_file.seek(0)
         return csv.DictReader(csv_file, dialect=csv_dialect)
 
