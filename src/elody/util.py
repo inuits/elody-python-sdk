@@ -105,6 +105,8 @@ def __flatten_dict_generator(object_lists, data: MutableMapping, parent_key):
                             ).items()
                         else:
                             yield f"{flattened_key}.{item_key}", item["value"]
+                    else:
+                        yield flattened_key, value
             else:
                 yield flattened_key, value
         else:
