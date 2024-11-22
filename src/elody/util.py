@@ -96,6 +96,7 @@ def __flatten_dict_generator(object_lists, data: MutableMapping, parent_key):
             yield from flatten_dict(object_lists, value, flattened_key).items()
         elif isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
             if all(isinstance(item, MutableMapping) for item in value):
+                item_key = None
                 for item in value:
                     item_key = item.get(object_lists.get(key))
                     if item_key:
@@ -105,8 +106,8 @@ def __flatten_dict_generator(object_lists, data: MutableMapping, parent_key):
                             ).items()
                         else:
                             yield f"{flattened_key}.{item_key}", item["value"]
-                    else:
-                        yield flattened_key, value
+                if not item_key:
+                    yield flattened_key, value
             else:
                 yield flattened_key, value
         else:
