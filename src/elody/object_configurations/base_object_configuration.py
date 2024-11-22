@@ -60,7 +60,7 @@ class BaseObjectConfiguration(ABC):
 
     @abstractmethod
     def validation(self):
-        def validator(http_method, content, **_):
+        def validator(http_method, content, item, **_):
             pass
 
         return "function", validator
