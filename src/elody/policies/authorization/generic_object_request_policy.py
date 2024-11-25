@@ -26,15 +26,29 @@ class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
         if not regex.match("^(/[^/]+/v[0-9]+)?/[^/]+$", request.path):
             return policy_context
 
-        for role in user_context.x_tenant.roles:
+        user = user_context.bag["user"]
+        all_roles = []
+        import logging
+        logging.warning(f"DIT IS DE USER {user}")
+        logging.warning(f"DIT ZIJN DE RELATIONS {user.get("relations", [])}")
+        for relation in user.get("relations", []):
+            if relation.get("type") == "hasContext":
+                all_roles.extend(relation.get("roles", []))
+        all_roles = list(set(all_roles))
+        for role in all_roles:
             permissions = get_permissions(role, user_context)
             if not permissions:
                 continue
-
+            context_ids = []
+            for relation in user.get("relations", []):
+                if role in relation.get("roles", []):
+                    context_ids.append(relation.get("key"))
             rules = [PostRequestRules, GetRequestRules]
             access_verdict = None
             for rule in rules:
-                access_verdict = rule().apply(user_context, request, permissions)
+                access_verdict = rule().apply(
+                    user_context, request, permissions, context_ids
+                )
                 if access_verdict != None:
                     policy_context.access_verdict = access_verdict
                     if not policy_context.access_verdict:
@@ -42,13 +56,12 @@ class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
 
             if policy_context.access_verdict:
                 return policy_context
-
         return policy_context
 
 
 class PostRequestRules:
     def apply(
-        self, user_context: UserContext, request: Request, permissions
+        self, user_context: UserContext, request: Request, permissions, context_ids: list
     ) -> bool | None:
         if request.method != "POST":
             return None
@@ -64,7 +77,7 @@ class PostRequestRules:
 
 class GetRequestRules:
     def apply(
-        self, user_context: UserContext, request: Request, permissions
+        self, user_context: UserContext, request: Request, permissions, context_ids: list
     ) -> bool | None:
         if request.method != "GET":
             return None
@@ -108,6 +121,14 @@ class GetRequestRules:
                     }
                 },
             ]
+
+        context_filter = {
+            "type": "selection",
+            "key": "relations.hasContext.key",
+            "value": context_ids,
+            "match_exact": True,
+        }
+        filters.append(context_filter)
 
         user_context.access_restrictions.filters = filters
         user_context.access_restrictions.post_request_hook = (
