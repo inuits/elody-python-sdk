@@ -151,6 +151,14 @@ class CSVMultiObject(CSVParser):
     def get_mediafiles(self):
         return self.objects.get("mediafiles", list())
 
+    def __determine_language(self, row):
+        if "language" in row:
+            return row.get("language")
+        elif "lang" in row:
+            return row.get("lang")
+        else:
+            return "en"
+
     def __field_allowed(self, target_object_type, key, value):
         for object_type, fields in self.object_field_mapping.items():
             for _ in [x for x in fields if x == key]:
@@ -168,6 +176,7 @@ class CSVMultiObject(CSVParser):
                 raise ColumnNotFoundException(
                     f"Not all identifying columns are present in CSV"
                 )
+            lang = self.__determine_language(row)
             previous_id = None
             for type, identifying_column in self.index_mapping.items():
                 id = row[identifying_column]
@@ -180,6 +189,8 @@ class CSVMultiObject(CSVParser):
                     indexed_dict[type][id]["matching_id"] = previous_id
                 previous_id = id
                 for key, value in row.items():
+                    if not value:
+                        continue
                     if self._is_relation_field(key) and self.__field_allowed(
                         type, key, value
                     ):
@@ -200,8 +211,7 @@ class CSVMultiObject(CSVParser):
                     elif (
                         key not in self.index_mapping.values()
                         or self.include_indexed_field
-                        and self.__field_allowed(type, key, value)
-                    ):
+                    ) and self.__field_allowed(type, key, value):
                         # Map the metadata field to a unified key if applicable
                         metadata_info = self.metadata_field_mapping.get(key, {})
                         if metadata_info.get("target") == type or not metadata_info:
@@ -213,7 +223,7 @@ class CSVMultiObject(CSVParser):
                                     f'The value "{value}" is invalid, these are the valid values: {options}'
                                 )
                             indexed_dict[type][id]["metadata"].append(
-                                self._get_metadata_object(metadata_key, value)
+                                self._get_metadata_object(metadata_key, value, lang)
                             )
         self.__validate_indexed_dict(indexed_dict)
         self.__add_required_fields(indexed_dict)
