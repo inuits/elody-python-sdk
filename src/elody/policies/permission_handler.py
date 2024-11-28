@@ -218,7 +218,7 @@ def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict
     except KeyError:
         if not is_optional:
             raise Exception(
-                f"{get_error_code(ErrorCode.METADATA_KEY_UNDEFINED, get_read())} Key {key} not found in document {flat_item['_id']}. Either prefix the key with '?' in your permission configuration to make it an optional restriction, or patch the document to include the key. '?' will allow access if key does not exist, '!?' will deny access if key does not exist."
+                f"{get_error_code(ErrorCode.METADATA_KEY_UNDEFINED, get_read())} Key {key} not found in document {flat_item.get('_id', flat_item["type"])}. Either prefix the key with '?' in your permission configuration to make it an optional restriction, or patch the document to include the key. '?' will allow access if key does not exist, '!?' will deny access if key does not exist."
             )
         return not negate_condition
 
