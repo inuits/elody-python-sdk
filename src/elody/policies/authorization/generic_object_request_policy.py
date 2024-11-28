@@ -52,8 +52,9 @@ class PostRequestRules:
     ) -> bool | None:
         if request.method != "POST":
             return None
-
         if request.args.get("dry_run", False):
+            return True
+        if regex.match(r"^/batch?$", request.path):
             return True
 
         content = get_content(request.json, request, request.json)
