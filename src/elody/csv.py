@@ -172,9 +172,10 @@ class CSVMultiObject(CSVParser):
     def __fill_objects_from_csv(self):
         indexed_dict = dict()
         for row in self.reader:
-            if not all(x in row.keys() for x in self.index_mapping.values()):
+            missing_columns = [x for x in self.index_mapping.values() if x not in row.keys()]
+            if missing_columns:
                 raise ColumnNotFoundException(
-                    f"Not all identifying columns are present in CSV"
+                    f"Not all identifying columns are present in CSV. Missing columns: {', '.join(missing_columns)}"
                 )
             lang = self.__determine_language(row)
             previous_id = None
