@@ -60,6 +60,7 @@ class ErrorCode(Enum):
     UNSUPPORTED_TYPE = "5009"
     CONTENT_NOT_FOUND = "5010"
     VALIDATION_ERROR = "5011"
+    TENANT_HAS_MISSING_DATA = "5012"
 
     # Filter error codes
     NO_MATCHER_FOR_FILTER_REQUEST = "6001"
@@ -77,6 +78,7 @@ class ErrorCode(Enum):
     ARCHES_ERROR = "11000"
     ARCHES_CONNECTION_UNAVAILABLE = "11001"
     ARCHES_RECORD_NOT_FOUND = "11002"
+    ARCHES_RECORD_MISSING_DATA = "11003"
 
 
 def get_error_code(error_code, prefix):
