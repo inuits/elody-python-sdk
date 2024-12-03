@@ -105,9 +105,6 @@ mediafile_schema = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "default": {},
-    "required": [
-        "filename",
-    ],
     "properties": {
         "filename": {
             "type": "string",
