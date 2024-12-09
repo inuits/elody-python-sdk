@@ -94,7 +94,7 @@ class BaseRequest:
         if not entity:
             abort(
                 404,
-                message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {entity_id} doesn't exist",
+                message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} | id:{entity_id} - Item with id {entity_id} doesn't exist",
             )
         type = entity.get("type")
         if type in self.global_types:
@@ -118,7 +118,7 @@ class BaseRequest:
             return f"tenant:{get_item_metadata_value(entity, 'institution')}"
         abort(
             400,
-            message=f"{get_error_code(ErrorCode.ENTITY_HAS_NO_TENANT, get_read())} Entity has no tenant, and is suppose to have one.",
+            message=f"{get_error_code(ErrorCode.ENTITY_HAS_NO_TENANT, get_read())} - Entity has no tenant, and is suppose to have one.",
         )
 
     def _get_tenant_id_from_mediafile(self, mediafile_id):
@@ -149,7 +149,7 @@ class BaseRequest:
             return f"tenant:{institution_id}"
         abort(
             400,
-            message=f"{get_error_code(ErrorCode.ENTITY_HAS_NO_TENANT, get_read())} Item in body doesn't have an institution.",
+            message=f"{get_error_code(ErrorCode.ENTITY_HAS_NO_TENANT, get_read())} - Item in body doesn't have an institution.",
         )
 
 

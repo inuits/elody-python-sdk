@@ -36,7 +36,7 @@ class MediafileDerivativesPolicy(BaseAuthorizationPolicy):
         if not item:
             abort(
                 404,
-                message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} Item with id {id} doesn't exist in collection {collection}",
+                message=f"{get_error_code(ErrorCode.ITEM_NOT_FOUND_IN_COLLECTION, get_read())} | id:{id} | collection: {collection} - Item with id {id} doesn't exist in collection {collection}",
             )
 
         for role in user_context.x_tenant.roles:
