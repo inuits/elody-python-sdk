@@ -192,17 +192,15 @@ def parse_url_unfriendly_string(
     input: str, *, replace_char=None, return_unfriendly_chars=False
 ):
     unfriendly_chars = []
+    result = input
     for char, encoded in URL_UNFRIENDLY_CHARS.items():
-        parsed_input = input.replace(
-            char, encoded if replace_char is None else replace_char
-        )
-        if input != parsed_input:
+        if char in input:
             unfriendly_chars.append(char)
-        input = parsed_input
-
+            replacement = encoded if replace_char is None else replace_char
+            result = result.replace(char, replacement)
     if return_unfriendly_chars:
-        return input, unfriendly_chars
-    return input
+        return result, unfriendly_chars
+    return result
 
 
 def send_cloudevent(mq_client, source, routing_key, data, exchange_name=None):
