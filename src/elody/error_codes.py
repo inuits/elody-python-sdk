@@ -30,7 +30,6 @@ class ErrorCode(Enum):
     NO_PERMISSION_TO_TENANT = ("1010", ["tenant_id"])
     XTENANT_NOT_FOUND = ("1011", ["x_tenant_id"])
     NO_DOWNLOAD_PERMISSION = ("1012", [])
-    
 
     # Database error codes
     DATABASE_NOT_INITIALIZED = ("2000", [])
@@ -92,19 +91,22 @@ class ErrorCode(Enum):
     ARCHES_RECORD_MISSING_DATA = ("11003", ["arches_id"])
     ARCHES_RECORD_MISSING_DATA_DC_PUBLISHER = ("11004", ["arches_id"])
     ARCHES_UNABLE_TO_CREATE_RELATION = ("11005", ["type", "value"])
-    
-    # Digipolis error codes 
+
+    # Digipolis error codes
     NO_PERMISSION_TO_CREATE_INSTIUTION = ("12000", ["institution"])
     INSTITUTION_HAS_MISSING_DATA = ("12001", ["institution"])
     INSTITUTION_NOT_FOUND = ("12002", [])
+
 
 def get_error_code(error_code, prefix):
     if prefix not in [ErrorCode.READ.value, ErrorCode.WRITE.value]:
         raise ValueError("Prefix must be 'R' for read or 'W' for write.")
     return f"{prefix}{error_code.value[0]}"
 
+
 def get_read():
     return ErrorCode.READ.value
+
 
 def get_write():
     return ErrorCode.WRITE.value

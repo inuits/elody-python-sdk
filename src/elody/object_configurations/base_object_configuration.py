@@ -123,9 +123,15 @@ class BaseObjectConfiguration(ABC):
                 }
             }
             if value in ["ANY_MATCH", "NONE_MATCH"]:
+                elem_match_with_exists_operator = deepcopy(elem_match)
                 del elem_match["$elemMatch"][keys_info[index + 1]["key"]]
                 if value == "NONE_MATCH":
-                    return {"NOR_MATCHER": [{info["key"]: {"$all": [elem_match]}}]}
+                    return {
+                        "NOR_MATCHER": [
+                            {info["key"]: {"$all": [elem_match]}},
+                            {info["key"]: {"$all": [elem_match_with_exists_operator]}},
+                        ]
+                    }
             return elem_match if index > 0 else {info["key"]: {"$all": [elem_match]}}
 
         raise Exception(f"Unable to build nested matcher. See keys_info: {keys_info}")

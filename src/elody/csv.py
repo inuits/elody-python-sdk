@@ -185,11 +185,11 @@ class CSVMultiObject(CSVParser):
         indexed_dict = dict()
         external_mediafiles_ids = []
         for row in self.reader:
-            missing_columns = [x for x in self.index_mapping.values() if x not in row.keys()]
+            missing_columns = [
+                x for x in self.index_mapping.values() if x not in row.keys()
+            ]
             if missing_columns:
-                raise ColumnNotFoundException(
-                    f"{', '.join(missing_columns)}"
-                )
+                raise ColumnNotFoundException(f"{', '.join(missing_columns)}")
             lang = self.__determine_language(row)
             previous_id = None
             for type, identifying_column in self.index_mapping.items():
