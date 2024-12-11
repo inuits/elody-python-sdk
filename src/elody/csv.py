@@ -188,7 +188,7 @@ class CSVMultiObject(CSVParser):
             missing_columns = [x for x in self.index_mapping.values() if x not in row.keys()]
             if missing_columns:
                 raise ColumnNotFoundException(
-                    f"Not all identifying columns are present in CSV. Missing columns: {', '.join(missing_columns)}"
+                    f"{', '.join(missing_columns)}"
                 )
             lang = self.__determine_language(row)
             previous_id = None
