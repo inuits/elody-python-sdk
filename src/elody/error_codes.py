@@ -61,7 +61,7 @@ class ErrorCode(Enum):
     REQUIRED_FIELD_MISSING = ("5002", [])
     INVALID_FORMAT = ("5003", [])
     INVALID_TYPE = ("5004", [])
-    COLUMN_NOT_FOUND = ("5005", [])
+    COLUMN_NOT_FOUND = ("5005", ["missing_columns"])
     ONLY_TYPE_CSV_ALLOWED = ("5006", [])
     NO_METADATA_AVAILABLE = ("5007", [])
     INVALID_DATETIME = ("5008", ["value"])
