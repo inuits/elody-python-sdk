@@ -138,7 +138,7 @@ class BaseRequest:
             return "tenant:super"
         if item.get("type") == "asset":
             for relation in item.get("relations", []):
-                if relation.get("type") in ["hasArchesLink"]:
+                if relation.get("type") in ["hasArchesLink", "hasAdlibLink", "hasBrocadeLink"]:
                     return "tenant:super"
         institution_id = get_item_metadata_value(item, "institution")
         if not institution_id:
