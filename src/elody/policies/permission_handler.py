@@ -9,18 +9,19 @@ from logging_elody.log import log  # pyright: ignore
 
 
 _permissions = {}
+_placeholders = ["X_TENANT_ID", "TENANT_DEFINING_ENTITY_ID"]
 
 
-def set_permissions(permissions: dict):
+def set_permissions(permissions: dict, placeholders: list[str] = []):
     global _permissions
     _permissions = permissions
+    _placeholders.extend(placeholders)
 
 
 def get_permissions(role: str, user_context: UserContext):
     permissions = deepcopy(_permissions)
-    placeholders = ["X_TENANT_ID", "TENANT_DEFINING_ENTITY_ID"]
 
-    for placeholder in placeholders:
+    for placeholder in _placeholders:
         permissions = __replace_permission_placeholders(
             permissions, placeholder, user_context.bag[placeholder.lower()]
         )
@@ -39,7 +40,10 @@ def __replace_permission_placeholders(data, placeholder_key, placeholder_value):
             for item in data
         ]
     elif isinstance(data, str):
-        data = data.replace(placeholder_key, placeholder_value)
+        if isinstance(placeholder_value, str):
+            data = data.replace(placeholder_key, placeholder_value)
+        elif isinstance(placeholder_value, list) and data == placeholder_key:
+            data = placeholder_value
     return data
 
 

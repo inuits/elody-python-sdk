@@ -35,11 +35,13 @@ def load_jobs(scheduler, logger):
                 pass
 
 
-def load_policies(policy_factory, logger, permissions={}):
+def load_policies(
+    policy_factory, logger, permissions: dict = {}, placeholders: list[str] = []
+):
     if permissions:
         from elody.policies.permission_handler import set_permissions
 
-        set_permissions(permissions)
+        set_permissions(permissions, placeholders)
 
     apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST", ""), logger)
     for app in apps:
