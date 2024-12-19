@@ -229,7 +229,7 @@ def init_digipolis_csv_object(csv):
         csv,
         index_mapping={
             "entities": "external_id",
-            "mediafiles": "file_identifier",
+            "?mediafiles": "file_identifier",
         },
         object_field_mapping={
             "mediafiles": [
@@ -288,7 +288,7 @@ def init_digipolis_csv_object(csv):
 def init_vliz_csv_object(csv):
     csv_multi_object = CSVMultiObject(
         csv,
-        index_mapping={"entities": "same_entity", "mediafiles": "filename"},
+        index_mapping={"entities": "same_entity", "?mediafiles": "filename"},
         object_field_mapping={
             "mediafiles": [
                 "filename",
