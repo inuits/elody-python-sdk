@@ -35,6 +35,14 @@ sample_multiple_keywords_csv_vliz = """same_entity,title,description,coordinates
 1,,,,keyword2,,,,,,,,,,,leeuw.jpg,,,,,,,keyword_mediafile,,,,
 """
 
+sample_csv_without_mediafile_digi = """external_id,external_system,type,asset_copyright_color
+tg:lhps:32930:m1,arches,asset,green
+"""
+
+sample_csv_without_mediafile_vliz = """same_entity,title,description,coordinates,media_keyword,language,asset_category,location_type,marine_region,event,project,partner,creator_person,owner_partner,type
+1,This is a media entity without a mediafile,This is a description,,keyword1,,,,,,,,person1,partner1,media
+"""
+
 expected_basic_objects_digipolis = {
     "entities": [
         {
@@ -179,6 +187,40 @@ expected_multiple_keywords_objects_vliz = {
             ],
         }
     ],
+}
+
+expected_only_entities_object_digipolis = {
+    "entities": [
+        {
+            "matching_id": "tg:lhps:32930:m1",
+            "metadata": [
+                {"key": "external_id", "value": "tg:lhps:32930:m1", "lang": "en"},
+                {"key": "external_system", "value": "arches", "lang": "en"},
+                {"key": "copyright_color", "value": "green", "lang": "en"},
+            ],
+            "type": "asset",
+        }
+    ]
+}
+
+expected_only_entities_object_vliz = {
+    "entities": [
+        {
+            "matching_id": "1",
+            "metadata": [
+                {
+                    "key": "title",
+                    "value": "This is a media entity without a mediafile",
+                    "lang": "",
+                },
+                {"key": "description", "value": "This is a description", "lang": ""},
+                {"key": "media_keyword", "value": "keyword1", "lang": ""},
+                {"key": "creator_person", "value": "person1", "lang": ""},
+                {"key": "owner_partner", "value": "partner1", "lang": ""},
+            ],
+            "type": "media",
+        }
+    ]
 }
 
 
@@ -342,15 +384,27 @@ def test_meemoo_csv_digipolis():
     assert csv_multi_object.objects == expected_meemoo_objects_digipolis
 
 
+def test_csv_with_only_an_entity_digipolis():
+    csv_multi_object = init_digipolis_csv_object(sample_csv_without_mediafile_digi)
+    assert csv_multi_object.objects == expected_only_entities_object_digipolis
+
+
 # Tests CSVMultiObject VLIZ
 def test_basic_csv_vliz():
     csv_multi_object = init_vliz_csv_object(sample_basic_csv_vliz)
     assert csv_multi_object.objects == expected_basic_objects_vliz
-    
+
+
 def test_basic_csv_digipolis_with_wrong_values():
     with pytest.raises(ColumnNotFoundException):
         init_vliz_csv_object(sample_basic_csv_vliz_missing_values)
-    
+
+
 def test_multiple_keywords_csv_vliz():
     csv_multi_object = init_vliz_csv_object(sample_multiple_keywords_csv_vliz)
     assert csv_multi_object.objects == expected_multiple_keywords_objects_vliz
+
+
+def test_csv_with_only_an_entity_vliz():
+    csv_multi_object = init_vliz_csv_object(sample_csv_without_mediafile_vliz)
+    assert csv_multi_object.objects == expected_only_entities_object_vliz
