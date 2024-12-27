@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from elody.migration.base_object_migrator import BaseObjectMigrator
+from policy_factory import get_user_context  # pyright: ignore
 
 
 class BaseObjectConfiguration(ABC):
@@ -10,20 +11,24 @@ class BaseObjectConfiguration(ABC):
     @abstractmethod
     def crud(self):
         return {
-            "collection": "entities",
-            "collection_history": "history",
             "creator": lambda post_body, **kwargs: post_body,
+            "document_content_patcher": lambda *, document, content, overwrite=False, **kwargs: self._document_content_patcher(
+                document=document,
+                content=content,
+                overwrite=overwrite,
+                **kwargs,
+            ),
             "nested_matcher_builder": lambda object_lists, keys_info, value: self.__build_nested_matcher(
                 object_lists, keys_info, value
             ),
             "post_crud_hook": lambda **kwargs: None,
-            "pre_crud_hook": lambda **kwargs: None,
+            "pre_crud_hook": lambda *, document, **kwargs: document,
             "storage_type": "db",
         }
 
     @abstractmethod
     def document_info(self):
-        return {"object_lists": {"metadata": "key", "relations": "type"}}
+        return {}
 
     @abstractmethod
     def logging(self, flat_document, **kwargs):
@@ -33,7 +38,7 @@ class BaseObjectConfiguration(ABC):
             "schema": f"{flat_document.get('schema.type')}:{flat_document.get('schema.version')}",
         }
         try:
-            user_context = kwargs.get("get_user_context")()  # pyright: ignore
+            user_context = get_user_context()
             info_labels["http_method"] = user_context.bag.get("http_method")
             info_labels["requested_endpoint"] = user_context.bag.get(
                 "requested_endpoint"
@@ -65,20 +70,46 @@ class BaseObjectConfiguration(ABC):
 
         return "function", validator
 
-    def _get_merged_post_body(self, post_body, document_defaults, object_list_name):
-        key = self.document_info()["object_lists"][object_list_name]
-        post_body[object_list_name] = self.__merge_object_lists(
-            document_defaults.get(object_list_name, []),
-            post_body.get(object_list_name, []),
-            key,
+    def _document_content_patcher(
+        self, *, document, content, overwrite=False, **kwargs
+    ):
+        raise NotImplementedError(
+            "Provide concrete implementation in child object configuration"
         )
-        return post_body
 
-    def _sanitize_document(self, document, object_list_name, value_field_name):
-        object_list = deepcopy(document[object_list_name])
-        for element in object_list:
-            if not element[value_field_name]:
-                document[object_list_name].remove(element)
+    def _merge_object_lists(self, source, target, object_list_key):
+        for target_item in target:
+            for source_item in source:
+                if source_item[object_list_key] == target_item[object_list_key]:
+                    source.remove(source_item)
+        return [*source, *target]
+
+    def _get_user_context_id(self):
+        try:
+            return get_user_context().id
+        except Exception:
+            return None
+
+    def _sanitize_document(self, *, document, **kwargs):
+        sanitized_document = {}
+        document_deepcopy = deepcopy(document)
+        for key, value in document_deepcopy.items():
+            if isinstance(value, dict):
+                sanitized_value = BaseObjectConfiguration._sanitize_document(
+                    self, document=value
+                )
+                if sanitized_value:
+                    sanitized_document[key] = sanitized_value
+            elif value:
+                sanitized_document[key] = value
+        return sanitized_document
+
+    def _should_create_history_object(self):
+        try:
+            get_user_context()
+            return bool(self.crud().get("collection_history"))
+        except Exception:
+            return False
 
     def _sort_document_keys(self, document):
         def sort_keys(data):
@@ -98,12 +129,13 @@ class BaseObjectConfiguration(ABC):
             else:
                 return data
 
-        for key, value in self.document_info()["object_lists"].items():
+        for key, value in self.document_info().get("object_lists", {}).items():
             if document.get(key):
                 document[key] = sorted(
                     document[key], key=lambda property: property[value]
                 )
         sort_keys(document)
+        return document
 
     def __build_nested_matcher(self, object_lists, keys_info, value, index=0):
         if index == 0 and not any(info["object_list"] for info in keys_info):
@@ -135,10 +167,3 @@ class BaseObjectConfiguration(ABC):
             return elem_match if index > 0 else {info["key"]: {"$all": [elem_match]}}
 
         raise Exception(f"Unable to build nested matcher. See keys_info: {keys_info}")
-
-    def __merge_object_lists(self, source, target, key):
-        for target_item in target:
-            for source_item in source:
-                if source_item[key] == target_item[key]:
-                    source.remove(source_item)
-        return [*source, *target]

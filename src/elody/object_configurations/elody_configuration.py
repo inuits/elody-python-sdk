@@ -12,6 +12,8 @@ class ElodyConfiguration(BaseObjectConfiguration):
 
     def crud(self):
         crud = {
+            "collection": "entities",
+            "collection_history": "history",
             "creator": lambda post_body, **kwargs: self._creator(post_body, **kwargs),
             "post_crud_hook": lambda **kwargs: self._post_crud_hook(**kwargs),
             "pre_crud_hook": lambda **kwargs: self._pre_crud_hook(**kwargs),
@@ -37,7 +39,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
         self,
         post_body,
         *,
-        get_user_context,
         flat_post_body={},
         document_defaults={},
     ):
@@ -65,36 +66,79 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "relations": [],
             "schema": {"type": self.SCHEMA_TYPE, "version": self.SCHEMA_VERSION},
         }
-        if email := self.__get_email(get_user_context):
-            template["computed_values"]["created_by"] = email
+        if user_context_id := self._get_user_context_id():
+            template["computed_values"]["created_by"] = user_context_id
 
-        for key in self.document_info()["object_lists"].keys():
-            post_body = self._get_merged_post_body(post_body, document_defaults, key)
+        for key, object_list_key in self.document_info()["object_lists"].items():
+            if not key.startswith("lookup.virtual_relations"):
+                post_body[key] = self._merge_object_lists(
+                    document_defaults.get(key, []),
+                    post_body.get(key, []),
+                    object_list_key,
+                )
         document = {**template, **document_defaults, **post_body}
 
-        self._sanitize_document(document, "metadata", "value")
-        self._sort_document_keys(document)
+        document = self._sanitize_document(
+            document=document,
+            object_list_name="metadata",
+            object_list_value_field_name="value",
+        )
+        document = self._sort_document_keys(document)
         return document
 
-    def _post_crud_hook(self, **_):
+    def _document_content_patcher(
+        self, *, document, content, overwrite=False, **kwargs
+    ):
+        object_lists = self.document_info().get("object_lists", {})
+        if overwrite:
+            document = content
+        else:
+            for key, value in content.items():
+                if key in object_lists:
+                    if key != "relations":
+                        for value_element in value:
+                            for item_element in document[key]:
+                                if (
+                                    item_element[object_lists[key]]
+                                    == value_element[object_lists[key]]
+                                ):
+                                    document[key].remove(item_element)
+                                    break
+                    document[key].extend(value)
+                else:
+                    document[key] = value
+
+        return document
+
+    def _post_crud_hook(self, **kwargs):
         pass
 
-    def _pre_crud_hook(self, *, crud, document={}, get_user_context=None, **_):
+    def _pre_crud_hook(self, *, crud, document={}, **kwargs):
         if document:
-            self._sanitize_document(document, "metadata", "value")
-            self.__patch_document_computed_values(
-                crud, document, get_user_context=get_user_context
+            document = self._sanitize_document(
+                document=document,
+                object_list_name="metadata",
+                object_list_value_field_name="value",
             )
-            self._sort_document_keys(document)
+            document = self.__patch_document_computed_values(crud, document)
+            document = self._sort_document_keys(document)
+        return document
 
-    def __get_email(self, get_user_context):
-        try:
-            return get_user_context().email
-        except Exception:
-            return None
+    def _sanitize_document(
+        self, *, document, object_list_name, object_list_value_field_name, **kwargs
+    ):
+        sanitized_document = super()._sanitize_document(document=document)
+        object_list = document[object_list_name]
+        for element in object_list:
+            if not element[object_list_value_field_name]:
+                sanitized_document[object_list_name].remove(element)
+        return sanitized_document
 
-    def __patch_document_computed_values(self, crud, document, **kwargs):
+    def __patch_document_computed_values(self, crud, document):
+        if not document.get("computed_values"):
+            document["computed_values"] = {}
         document["computed_values"].update({"event": crud})
         document["computed_values"].update({"modified_at": datetime.now(timezone.utc)})
-        if email := self.__get_email(kwargs.get("get_user_context")):
+        if email := self._get_user_context_id():
             document["computed_values"].update({"modified_by": email})
+        return document

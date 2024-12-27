@@ -21,9 +21,10 @@ def set_permissions(permissions: dict, placeholders: list[str] = []):
 def get_permissions(role: str, user_context: UserContext):
     permissions = deepcopy(_permissions)
 
-    for placeholder in _placeholders:
+    for placeholder_key in _placeholders:
+        placeholder_value = user_context.bag.get(placeholder_key.lower())
         permissions = __replace_permission_placeholders(
-            permissions, placeholder, user_context.bag[placeholder.lower()]
+            permissions, placeholder_key, placeholder_value
         )
     return permissions.get(role, {})  # pyright: ignore
 
@@ -84,8 +85,8 @@ def handle_single_item_request(
 
 def mask_protected_content_post_request_hook(user_context: UserContext, permissions):
     def __post_request_hook(response):
-        items = response["results"]
-        for item in items:
+        items = []
+        for item in response["results"]:
             try:
                 (
                     item_in_storage_format,
@@ -104,6 +105,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
                     "read",
                     object_lists,
                 )
+                items.append(user_context.bag["requested_item"])
             except Exception as exception:
                 log.debug(
                     f"{exception.__class__.__name__}: {str(exception)}",
@@ -111,6 +113,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
                 )
                 raise exception
 
+        response["results"] = items
         return response
 
     return __post_request_hook
@@ -122,7 +125,7 @@ def __prepare_item_for_permission_check(item, permissions, crud):
         return item, None, None, None
 
     config = get_object_configuration_mapper().get(item["type"])
-    object_lists = config.document_info()["object_lists"]
+    object_lists = config.document_info().get("object_lists", {})
     flat_item = flatten_dict(object_lists, item)
 
     return (
@@ -188,16 +191,23 @@ def __is_allowed_to_crud_item_keys(
         if condition_match:
             if crud == "read":
                 keys_info = interpret_flat_key(restricted_key, object_lists)
-                element = item_in_storage_format
                 for info in keys_info:
                     if info["object_list"]:
                         element = __get_element_from_object_list_of_item(
-                            element,
+                            item_in_storage_format,
                             info["key"],
                             info["object_key"],
                             object_lists,
                         )
-                element[info["key"]] = "[protected content]"  # pyright: ignore
+                        item_in_storage_format[info["key"]].remove(element)
+                        break
+                else:
+                    try:
+                        del item_in_storage_format[keys_info[0]["key"]][
+                            keys_info[1]["key"]
+                        ]
+                    except KeyError:
+                        pass
             else:
                 if flat_request_body.get(restricted_key):
                     user_context.bag["restricted_keys"].append(restricted_key)

@@ -11,7 +11,7 @@ from elody.util import (
     mediafile_is_public,
     read_json_as_dict,
     parse_url_unfriendly_string,
-    CustomJSONEncoder
+    CustomJSONEncoder,
 )
 from data import mediafile1, mediafile2
 from datetime import datetime, timezone
@@ -24,11 +24,13 @@ def test_default_method_with_datetime():
     result = encoder.default(dt)
     assert result == "2023-10-01T12:00:00+00:00"
 
+
 def test_default_method_with_naive_datetime():
     encoder = CustomJSONEncoder()
     dt = datetime(2023, 10, 1, 12, 0, 0)
     result = encoder.default(dt)
     assert result == "2023-10-01T10:00:00+00:00"
+
 
 def test_encode_method_with_non_datetime():
     encoder = CustomJSONEncoder()

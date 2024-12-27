@@ -16,8 +16,8 @@ class JobConfiguration(ElodyConfiguration):
     def document_info(self):
         return super().document_info()
 
-    def logging(self, flat_item, **kwargs):
-        return super().logging(flat_item, **kwargs)
+    def logging(self, flat_document, **kwargs):
+        return super().logging(flat_document, **kwargs)
 
     def migration(self):
         return super().migration()

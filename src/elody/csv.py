@@ -188,9 +188,7 @@ class CSVMultiObject(CSVParser):
             mandatory_columns = [
                 v for k, v in self.index_mapping.items() if not k.startswith("?")
             ]
-            missing_columns = [
-                x for x in mandatory_columns if x not in row.keys()
-            ]
+            missing_columns = [x for x in mandatory_columns if x not in row.keys()]
             if missing_columns:
                 raise ColumnNotFoundException(f"{', '.join(missing_columns)}")
             lang = self.__determine_language(row)
