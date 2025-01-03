@@ -28,6 +28,12 @@ class JobConfiguration(ElodyConfiguration):
     def validation(self):
         return super().validation()
 
+    def _creator(self, post_body, *, get_user_context={}, **_):
+        document = super()._creator(post_body)
+        if email := get_user_context().email:
+            document["computed_values"]["created_by"] = email
+        return document
+
     def _post_crud_hook(self, *, crud, document, get_rabbit, **kwargs):
         if crud == "create":
             send_cloudevent(

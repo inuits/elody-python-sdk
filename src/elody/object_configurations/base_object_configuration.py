@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from elody.migration.base_object_migrator import BaseObjectMigrator
-from policy_factory import get_user_context  # pyright: ignore
 
 
 class BaseObjectConfiguration(ABC):
@@ -38,6 +37,8 @@ class BaseObjectConfiguration(ABC):
             "schema": f"{flat_document.get('schema.type')}:{flat_document.get('schema.version')}",
         }
         try:
+            from policy_factory import get_user_context  # pyright: ignore
+
             user_context = get_user_context()
             info_labels["http_method"] = user_context.bag.get("http_method")
             info_labels["requested_endpoint"] = user_context.bag.get(
@@ -86,6 +87,8 @@ class BaseObjectConfiguration(ABC):
 
     def _get_user_context_id(self):
         try:
+            from policy_factory import get_user_context  # pyright: ignore
+
             return get_user_context().id
         except Exception:
             return None
@@ -106,6 +109,8 @@ class BaseObjectConfiguration(ABC):
 
     def _should_create_history_object(self):
         try:
+            from policy_factory import get_user_context  # pyright: ignore
+
             get_user_context()
             return bool(self.crud().get("collection_history"))
         except Exception:
