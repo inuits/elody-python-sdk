@@ -54,7 +54,7 @@ class MediafileDerivativesPolicy(BaseAuthorizationPolicy):
                 if access_verdict != None:
                     policy_context.access_verdict = access_verdict
                     if not policy_context.access_verdict:
-                        return policy_context
+                        break
 
             if policy_context.access_verdict:
                 return policy_context

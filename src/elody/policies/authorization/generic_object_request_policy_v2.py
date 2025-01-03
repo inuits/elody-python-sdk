@@ -1,13 +1,12 @@
 import re as regex
 
-from elody.policies.helpers import get_content
 from configuration import get_object_configuration_mapper  # pyright: ignore
+from elody.policies.helpers import get_content
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
     mask_protected_content_post_request_hook,
 )
-from elody.util import interpret_flat_key
 from flask import Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
@@ -18,7 +17,7 @@ from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
 )
 
 
-class GenericObjectRequestPolicy(BaseAuthorizationPolicy):
+class GenericObjectRequestPolicyV2(BaseAuthorizationPolicy):
     def authorize(
         self, policy_context: PolicyContext, user_context: UserContext, request_context
     ):
@@ -52,14 +51,12 @@ class PostRequestRules:
     ) -> bool | None:
         if request.method != "POST":
             return None
-        if request.args.get("dry_run", False):
-            return True
-        if regex.match(r"^/batch?$", request.path):
-            return True
 
         content = get_content(request.json, request, request.json)
+        schema_type = get_object_configuration_mapper().get(content["type"]).SCHEMA_TYPE
+        item = {**content, "schema": {"type": schema_type}}
         return handle_single_item_request(
-            user_context, request.json, permissions, "create", content
+            user_context, item, permissions, "create", content
         )
 
 
@@ -69,69 +66,68 @@ class GetRequestRules:
     ) -> bool | None:
         if request.method != "GET":
             return None
-        type_query_parameter = (
-            "mediafile"
-            if regex.match(r"^/mediafiles(?:\?(.*))?$", request.path)
-            else request.args.get("type")
-        )
+
+        type_query_parameter = request.args.get("type")
         allowed_item_types = list(permissions["read"].keys())
         filters = []
 
         if type_query_parameter:
-            if type_query_parameter in allowed_item_types:
-                config = get_object_configuration_mapper().get(type_query_parameter)
-                object_lists = config.document_info()["object_lists"]
-
-                restrictions = permissions["read"][type_query_parameter].get(
-                    "object_restrictions", {}
-                )
-                for key, value in restrictions.items():
-                    keys_info = interpret_flat_key(key, object_lists)
-                    filters.append(
-                        _build_nested_matcher(object_lists, keys_info, value)
-                    )
-            else:
+            if type_query_parameter not in allowed_item_types:
                 return None
+            type_permissions = permissions["read"][type_query_parameter]
+            schemas = list(type_permissions.keys())
+            if len(schemas) > 0:
+                number_of_object_restrictions = len(
+                    type_permissions[schemas[0]].get("object_restrictions", {}).keys()
+                )
+                for i in range(number_of_object_restrictions):
+                    keys, values = [], []
+                    for schema in schemas:
+                        object_restrictions = type_permissions[schema].get(
+                            "object_restrictions", {}
+                        )
+                        key = [
+                            key
+                            for key in object_restrictions.keys()
+                            if key.startswith(f"{i}:")
+                        ][0]
+                        keys.append(f"{schema}|{key.split(':')[1]}")
+                        values = object_restrictions[key]
+                    filters.append(
+                        {
+                            "type": "selection",
+                            "key": keys,
+                            "value": values,
+                            "match_exact": True,
+                        }
+                    )
+            filters.insert(0, {"type": "type", "value": type_query_parameter})
         else:
-            filters = [
-                {"type": {"$in": allowed_item_types}},
+            filters.append(
                 {
-                    "relations": {
-                        "$elemMatch": {
-                            "key": user_context.bag.get(
+                    "type": "selection",
+                    "key": "type",
+                    "value": allowed_item_types,
+                    "match_exact": True,
+                }
+            )
+            if tenant_relation_type := user_context.bag.get("tenant_relation_type"):
+                filters.append(
+                    {
+                        "type": "selection",
+                        "key": tenant_relation_type,
+                        "value": [
+                            "tenant:super",
+                            user_context.bag.get(
                                 "tenant_defining_entity_id", user_context.x_tenant.id
                             ),
-                            "type": [
-                                user_context.bag["tenant_relation_type"],
-                                "belongsTo",
-                            ],
-                        }
+                        ],
+                        "match_exact": True,
                     }
-                },
-            ]
+                )
 
         user_context.access_restrictions.filters = filters
         user_context.access_restrictions.post_request_hook = (
             mask_protected_content_post_request_hook(user_context, permissions)
         )
         return True
-
-
-def _build_nested_matcher(object_lists, keys_info, value, index=0):
-    info = keys_info[index]
-
-    if info["object_list"]:
-        nested_matcher = _build_nested_matcher(
-            object_lists, keys_info, value, index + 1
-        )
-        elem_match = {
-            "$elemMatch": {
-                object_lists[info["key"]]: info["object_key"],
-                keys_info[index + 1]["key"]: nested_matcher,
-            }
-        }
-        return elem_match if index > 0 else {info["key"]: elem_match}
-
-    if isinstance(value, list):
-        value = {"$in": value}
-    return value if index > 0 else {info["key"]: value}
