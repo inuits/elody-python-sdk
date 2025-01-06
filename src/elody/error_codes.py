@@ -87,7 +87,7 @@ class ErrorCode(Enum):
     # Arches error codes
     ARCHES_ERROR = ("11000", ["error"])
     ARCHES_CONNECTION_UNAVAILABLE = ("11001", [])
-    ARCHES_RECORD_NOT_FOUND = ("11002", ["error_message"])
+    ARCHES_RECORD_NOT_FOUND = ("11002", ["error_message", "arches_id"])
     ARCHES_RECORD_MISSING_DATA = ("11003", ["arches_id"])
     ARCHES_RECORD_MISSING_DATA_DC_PUBLISHER = ("11004", ["arches_id"])
     ARCHES_UNABLE_TO_CREATE_RELATION = ("11005", ["type", "value"])
