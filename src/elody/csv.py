@@ -250,9 +250,12 @@ class CSVMultiObject(CSVParser):
                         # Map the metadata field to a unified key if applicable
                         metadata_info = self.metadata_field_mapping.get(key, {})
                         if metadata_info.get("target") == type or not metadata_info:
+                            case_insensitive = metadata_info.get("case_insensitive", False)
                             metadata_key = metadata_info.get("map_to", key)
                             indexed_dict[type][id].setdefault("metadata", list())
                             options = metadata_info.get("value_options")
+                            if case_insensitive:
+                                value = value.lower()
                             if options and value not in options:
                                 raise InvalidValueException(
                                     f'The value "{value}" is invalid, these are the valid values: {options}'
