@@ -22,9 +22,12 @@ class CSVParser:
         "mediafiles": mediafile_schema,
     }
 
-    def __init__(self, csvstring):
-        self.csvstring = csvstring
-        self.reader = self.__get_reader_from_csv(self.__csv_string_to_file_object())
+    def __init__(self, csvstring=None, csvfile=None):
+        if csvstring:
+            self.csvstring = csvstring
+            self.reader = self.__get_reader_from_csv(self.__csv_string_to_file_object())
+        elif csvfile:
+            self.reader = self.__get_reader_from_csv(csvfile)
 
     def _get_metadata_object(self, key, value, lang="en"):
         return {
