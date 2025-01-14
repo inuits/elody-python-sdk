@@ -34,6 +34,7 @@ loader = [
   "APScheduler>=3.10.4",
   "cloudevents>=1.9.0",
   "inuits-policy-based-auth>=10.0.1",
+  "jsonschema>=4.23.0",
   "pytz>=2024.1",
   "six>=1.16.0",
   "tzlocal>=5.2",
