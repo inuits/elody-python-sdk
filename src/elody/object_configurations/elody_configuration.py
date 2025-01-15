@@ -104,6 +104,8 @@ class ElodyConfiguration(BaseObjectConfiguration):
                                 ):
                                     document[key].remove(item_element)
                                     break
+                    if not document.get(key):
+                        document[key] = []
                     document[key].extend(value)
                 else:
                     document[key] = value
