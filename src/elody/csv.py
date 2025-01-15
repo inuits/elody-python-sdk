@@ -284,19 +284,17 @@ class CSVMultiObject(CSVParser):
         if not self.required_metadata_values:
             return
         for object_type, objects in indexed_dict.items():
-            for required_key, required_value in self.required_metadata_values.get(
-                object_type, dict()
-            ).items():
+            required_fields = self.required_metadata_values.get(object_type, {})
+            for required_key, required_value in required_fields.items():
                 for object in objects.values():
-                    for metadata in object.get("metadata", list()):
-                        if metadata.get("key") == required_key:
-                            break
-                    else:
-                        if "metadata" not in object:
-                            object["metadata"] = list()
-                        object["metadata"].append(
-                            self._get_metadata_object(required_key, required_value)
-                        )
+                    if "metadata" not in object:
+                        object["metadata"] = []
+                    if not any(metadata.get("key") == required_key for metadata in object["metadata"]):
+                        if required_value is not None:
+                            metadata_object = self._get_metadata_object(required_key, required_value)
+                        else:
+                            raise ColumnNotFoundException(required_key)    
+                        object["metadata"].append(metadata_object)
 
     def __validate_indexed_dict(self, indexed_dict):
         for object_type, objects in indexed_dict.items():
