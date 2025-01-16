@@ -229,6 +229,8 @@ def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict
 
     try:
         item_value = flat_request_body.get(key, flat_item[key])
+        if is_optional:
+            negate_condition = False
     except KeyError:
         if not is_optional:
             raise Exception(

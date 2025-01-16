@@ -253,7 +253,9 @@ class CSVMultiObject(CSVParser):
                         # Map the metadata field to a unified key if applicable
                         metadata_info = self.metadata_field_mapping.get(key, {})
                         if metadata_info.get("target") == type or not metadata_info:
-                            case_insensitive = metadata_info.get("case_insensitive", False)
+                            case_insensitive = metadata_info.get(
+                                "case_insensitive", False
+                            )
                             metadata_key = metadata_info.get("map_to", key)
                             indexed_dict[type][id].setdefault("metadata", list())
                             options = metadata_info.get("value_options")
@@ -289,11 +291,16 @@ class CSVMultiObject(CSVParser):
                 for object in objects.values():
                     if "metadata" not in object:
                         object["metadata"] = []
-                    if not any(metadata.get("key") == required_key for metadata in object["metadata"]):
+                    if not any(
+                        metadata.get("key") == required_key
+                        for metadata in object["metadata"]
+                    ):
                         if required_value is not None:
-                            metadata_object = self._get_metadata_object(required_key, required_value)
+                            metadata_object = self._get_metadata_object(
+                                required_key, required_value
+                            )
                         else:
-                            raise ColumnNotFoundException(required_key)    
+                            raise ColumnNotFoundException(required_key)
                         object["metadata"].append(metadata_object)
 
     def __validate_indexed_dict(self, indexed_dict):
