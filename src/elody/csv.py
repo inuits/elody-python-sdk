@@ -2,6 +2,7 @@ import csv
 import re
 
 from io import StringIO
+from elody.error_codes import ErrorCode, get_error_code, get_write
 from elody.exceptions import (
     ColumnNotFoundException,
     IncorrectTypeException,
@@ -160,6 +161,9 @@ class CSVMultiObject(CSVParser):
     def get_errors(self):
         return self.errors
 
+    def set_error(self, type, errors):
+        self.errors[type] = errors
+
     def get_top_level_fields_mapping(self, type):
         return self.top_level_fields_mapping.get(type, {})
 
@@ -262,9 +266,11 @@ class CSVMultiObject(CSVParser):
                             if case_insensitive:
                                 value = value.lower()
                             if options and value not in options:
-                                raise InvalidValueException(
-                                    f'The value "{value}" is invalid, these are the valid values: {options}'
-                                )
+                                if "invalid_value" not in self.get_errors():
+                                    self.set_error("invalid_value", list())
+                                message = f'{get_error_code(ErrorCode.INVALID_VALUE, get_write())} | value:{value} | options:{options} - The value "{value}" is invalid, these are the valid values: {options}'
+                                self.get_errors()["invalid_value"].append(message)
+
                             indexed_dict[type][id]["metadata"].append(
                                 self._get_metadata_object(metadata_key, value, lang)
                             )
