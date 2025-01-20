@@ -71,6 +71,8 @@ class ErrorCode(Enum):
     INVALID_FORMAT_FOR_TYPE = ("5013", ["type"])
     NO_METADATA_AVAILABLE_FOR_ITEM = ("5014", ["id"])
     INVALID_ACCEPT_HEADER = ("5015", [])
+    INVALID_VALUE = ("5016", ["value", "options"])
+    ITEM_WITH_VALUE_FOR_KEY_NOT_FOUND = ("5017", ["key", "value"])
 
     # Filter error codes
     NO_MATCHER_FOR_FILTER_REQUEST = ("6001", [])
