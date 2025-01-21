@@ -27,7 +27,7 @@ class ErrorCode(Enum):
     XTENANT_HAS_NO_TENANT_DEFENING_ENTITY = ("1007", ["x_tenant_id"])
     INSUFFICIENT_PERMISSIONS_WITHOUT_VARS = ("1008", [])
     NO_GLOBAL_ROLES = ("1009", [])
-    NO_PERMISSION_TO_TENANT = ("1010", ["tenant_id"])
+    NO_PERMISSION_TO_TENANT = ("1010", ["tenant_id", "line_number"])
     XTENANT_NOT_FOUND = ("1011", ["x_tenant_id"])
     NO_DOWNLOAD_PERMISSION = ("1012", [])
 
