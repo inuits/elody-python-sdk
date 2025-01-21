@@ -27,7 +27,7 @@ class ErrorCode(Enum):
     XTENANT_HAS_NO_TENANT_DEFENING_ENTITY = ("1007", ["x_tenant_id"])
     INSUFFICIENT_PERMISSIONS_WITHOUT_VARS = ("1008", [])
     NO_GLOBAL_ROLES = ("1009", [])
-    NO_PERMISSION_TO_TENANT = ("1010", ["tenant_id"])
+    NO_PERMISSION_TO_TENANT = ("1010", ["tenant_id", "line_number"])
     XTENANT_NOT_FOUND = ("1011", ["x_tenant_id"])
     NO_DOWNLOAD_PERMISSION = ("1012", [])
 
@@ -71,8 +71,8 @@ class ErrorCode(Enum):
     INVALID_FORMAT_FOR_TYPE = ("5013", ["type"])
     NO_METADATA_AVAILABLE_FOR_ITEM = ("5014", ["id"])
     INVALID_ACCEPT_HEADER = ("5015", [])
-    INVALID_VALUE = ("5016", ["value", "options"])
-    ITEM_WITH_VALUE_FOR_KEY_NOT_FOUND = ("5017", ["key", "value"])
+    INVALID_VALUE = ("5016", ["value", "options", "line_number"])
+    ITEM_WITH_VALUE_FOR_KEY_NOT_FOUND = ("5017", ["key", "value", "line_number"])
 
     # Filter error codes
     NO_MATCHER_FOR_FILTER_REQUEST = ("6001", [])
@@ -95,7 +95,7 @@ class ErrorCode(Enum):
     ARCHES_UNABLE_TO_CREATE_RELATION = ("11005", ["type", "value"])
 
     # Digipolis error codes
-    NO_PERMISSION_TO_CREATE_INSTIUTION = ("12000", ["institution"])
+    NO_PERMISSION_TO_CREATE_INSTIUTION = ("12000", ["institution", "line_number"])
     INSTITUTION_HAS_MISSING_DATA = ("12001", ["institution"])
     INSTITUTION_NOT_FOUND = ("12002", [])
 

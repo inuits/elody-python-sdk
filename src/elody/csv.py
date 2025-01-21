@@ -152,6 +152,7 @@ class CSVMultiObject(CSVParser):
         self.external_file_sources = (
             external_file_sources if external_file_sources else []
         )
+        self.line_numbers = []
         self.__fill_objects_from_csv()
         self.__rename_top_level_fields()
 
@@ -160,6 +161,24 @@ class CSVMultiObject(CSVParser):
 
     def get_errors(self):
         return self.errors
+
+    def get_line_numbers(self):
+        return self.line_numbers
+
+    def get_line_number(self, entity_identifier=None, mediafile_identifier=None):
+        for line_number, line_info in enumerate(self.line_numbers, start=1):
+            if (
+                entity_identifier
+                and line_info.get("entity_identifier") != entity_identifier
+            ):
+                continue
+            if (
+                mediafile_identifier
+                and line_info.get("mediafile_identifier") != mediafile_identifier
+            ):
+                continue
+            return line_number
+        return None
 
     def set_error(self, type, errors):
         self.errors[type] = errors
@@ -191,7 +210,27 @@ class CSVMultiObject(CSVParser):
     def __fill_objects_from_csv(self):
         indexed_dict = dict()
         external_mediafiles_ids = []
-        for row in self.reader:
+        for row_number, row in enumerate(self.reader, start=1):
+            normalized_mapping = {
+                key.lstrip("?"): value for key, value in self.index_mapping.items()
+            }
+            entity_identifier_column = normalized_mapping.get("entities")
+            mediafile_identifier_column = normalized_mapping.get("mediafiles")
+            entity_identifier = (
+                row.get(entity_identifier_column) if entity_identifier_column else None
+            )
+            mediafile_identifier = (
+                row.get(mediafile_identifier_column)
+                if mediafile_identifier_column
+                else None
+            )
+            self.line_numbers.append(
+                {
+                    "line": row_number,
+                    "entity_identifier": entity_identifier,
+                    "mediafile_identifier": mediafile_identifier,
+                }
+            )
             mandatory_columns = [
                 v for k, v in self.index_mapping.items() if not k.startswith("?")
             ]
@@ -254,7 +293,6 @@ class CSVMultiObject(CSVParser):
                         key not in self.index_mapping.values()
                         or self.include_indexed_field
                     ) and self.__field_allowed(type, key, value):
-                        # Map the metadata field to a unified key if applicable
                         metadata_info = self.metadata_field_mapping.get(key, {})
                         if metadata_info.get("target") == type or not metadata_info:
                             case_insensitive = metadata_info.get(
@@ -268,7 +306,7 @@ class CSVMultiObject(CSVParser):
                             if options and value not in options:
                                 if "invalid_value" not in self.get_errors():
                                     self.set_error("invalid_value", list())
-                                message = f'{get_error_code(ErrorCode.INVALID_VALUE, get_write())} | value:{value} | options:{options} - The value "{value}" is invalid, these are the valid values: {options}'
+                                message = f'{get_error_code(ErrorCode.INVALID_VALUE, get_write())} | value:{value} | options:{options}| line_number:{row_number} - The value "{value}" is invalid, these are the valid values: {options}'
                                 self.get_errors()["invalid_value"].append(message)
 
                             indexed_dict[type][id]["metadata"].append(
