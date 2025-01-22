@@ -16,6 +16,7 @@ class ErrorCode(Enum):
     ENTITY_HAS_NO_TENANT = ("0009", ["value", "user"])
     MEDIAFILE_NOT_FOUND = ("0010", [])
     ITEM_NOT_FOUND_IN_COLLECTION = ("0011", ["id", "collection"])
+    ITEM_ALREADY_EXISTS_IN_COLLECTION = ("0012", ["id", "collection"])
 
     # Auth error codes
     INVALID_CREDENTIALS = ("1001", [])
