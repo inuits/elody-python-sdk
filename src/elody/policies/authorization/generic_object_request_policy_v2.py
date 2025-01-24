@@ -52,7 +52,8 @@ class PostRequestRules:
         if request.method != "POST":
             return None
 
-        content = get_content(request.json, request, request.json)
+        content = g.get("content") or request.json
+        content = get_content(content, request, content)
         schema_type = get_object_configuration_mapper().get(content["type"]).SCHEMA_TYPE
         item = {**content, "schema": {"type": schema_type}}
         return handle_single_item_request(
