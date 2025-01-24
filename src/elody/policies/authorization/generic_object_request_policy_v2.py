@@ -7,7 +7,7 @@ from elody.policies.permission_handler import (
     handle_single_item_request,
     mask_protected_content_post_request_hook,
 )
-from flask import Request  # pyright: ignore
+from flask import g, Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
     PolicyContext,
