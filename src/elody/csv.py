@@ -259,6 +259,8 @@ class CSVMultiObject(CSVParser):
                 for key, value in row.items():
                     if not value:
                         continue
+                    if key != identifying_column:
+                        value = value.lower()
                     if key == "file_source":
                         file_source = value
                     if (
@@ -295,14 +297,9 @@ class CSVMultiObject(CSVParser):
                     ) and self.__field_allowed(type, key, value):
                         metadata_info = self.metadata_field_mapping.get(key, {})
                         if metadata_info.get("target") == type or not metadata_info:
-                            case_insensitive = metadata_info.get(
-                                "case_insensitive", False
-                            )
                             metadata_key = metadata_info.get("map_to", key)
                             indexed_dict[type][id].setdefault("metadata", list())
                             options = metadata_info.get("value_options")
-                            if case_insensitive:
-                                value = value.lower()
                             if options and value not in options:
                                 if "invalid_value" not in self.get_errors():
                                     self.set_error("invalid_value", list())
