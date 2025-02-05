@@ -51,6 +51,33 @@ def start_job(
     return job["_id"]
 
 
+def add_document_to_job(
+    id,
+    id_of_document_job_was_initiated_for,
+    type_of_document_job_was_initiated_for,
+    *,
+    get_rabbit,
+):
+    relations = []
+    if id_of_document_job_was_initiated_for and type_of_document_job_was_initiated_for:
+        relations.append(
+            {"key": id_of_document_job_was_initiated_for, "type": "isJobFor"}
+        )
+    document = {
+        "id": id,
+        "patch": {
+            "relations": (relations),
+        },
+    }
+    _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
+    __patch_document_job_was_initiated_for_v2(
+        id,
+        id_of_document_job_was_initiated_for,
+        type_of_document_job_was_initiated_for,
+        get_rabbit,
+    )
+
+
 def finish_job(
     id,
     id_of_document_job_was_initiated_for=None,
@@ -91,5 +118,14 @@ def __patch_document_job_was_initiated_for(id, type, get_rabbit):
         document = {
             "document_info_job_was_initiated_for": {"id": id, "type": type},
             "patch": {"relations": [{"key": id, "type": "hasJob"}]},
+        }
+        _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
+
+
+def __patch_document_job_was_initiated_for_v2(job_id, document_id, type, get_rabbit):
+    if id and type:
+        document = {
+            "document_info_job_was_initiated_for": {"id": document_id, "type": type},
+            "patch": {"relations": [{"key": job_id, "type": "hasJob"}]},
         }
         _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
