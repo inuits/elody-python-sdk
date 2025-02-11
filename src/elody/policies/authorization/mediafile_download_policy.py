@@ -50,7 +50,7 @@ class MediafileDownloadPolicy(BaseAuthorizationPolicy):
             access_verdict = None
             for rule in rules:
                 access_verdict = rule().apply(item, user_context, request, permissions)
-                if access_verdict != None:
+                if access_verdict is not None:
                     policy_context.access_verdict = access_verdict
                     if not policy_context.access_verdict:
                         break

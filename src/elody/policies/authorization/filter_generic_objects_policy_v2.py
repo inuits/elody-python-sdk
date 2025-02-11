@@ -42,9 +42,13 @@ class FilterGenericObjectsPolicyV2(BaseAuthorizationPolicy):
             access_verdict = None
             for rule in rules:
                 access_verdict = rule().apply(
-                    type_filter["value"], filters, user_context, request, permissions
+                    deepcopy(type_filter["value"]),
+                    filters,
+                    user_context,
+                    request,
+                    permissions,
                 )
-                if access_verdict != None:
+                if access_verdict is not None:
                     policy_context.access_verdict = access_verdict
                     if not policy_context.access_verdict:
                         break

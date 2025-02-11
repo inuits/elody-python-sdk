@@ -42,7 +42,7 @@ class FilterGenericObjectsPolicy(BaseAuthorizationPolicy):
                 access_verdict = rule().apply(
                     type_filter["value"], user_context, request, permissions
                 )
-                if access_verdict != None:
+                if access_verdict is not None:
                     policy_context.access_verdict = access_verdict
                     if not policy_context.access_verdict:
                         break
