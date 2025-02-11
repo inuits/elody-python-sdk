@@ -199,7 +199,8 @@ def __is_allowed_to_crud_item_keys(
                             info["object_key"],
                             object_lists,
                         )
-                        item_in_storage_format[info["key"]].remove(element)
+                        if element:
+                            item_in_storage_format[info["key"]].remove(element)
                         break
                 else:
                     try:
