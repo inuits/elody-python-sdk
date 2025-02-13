@@ -223,10 +223,11 @@ def signal_edge_changed(mq_client, parent_ids_from_changed_edges):
     send_cloudevent(mq_client, "dams", "dams.edge_changed", data)
 
 
-def signal_entity_changed(mq_client, entity):
+def signal_entity_changed(mq_client, entity, unchanged_entity=None):
     data = {
         "location": f"/entities/{get_raw_id(entity)}",
         "type": entity.get("type", "unspecified"),
+        "unchanged_entity": unchanged_entity,
     }
     send_cloudevent(mq_client, "dams", "dams.entity_changed", data)
 
