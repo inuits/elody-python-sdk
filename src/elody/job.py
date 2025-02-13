@@ -6,7 +6,7 @@ _create = _config.crud()["creator"]
 _post_crud_hook = _config.crud()["post_crud_hook"]
 
 
-def start_job(
+def init_job(
     name,
     job_type,
     *,
@@ -29,7 +29,7 @@ def start_job(
         {
             "metadata": [
                 {"key": "name", "value": name},
-                {"key": "status", "value": "running"},
+                {"key": "status", "value": "queued"},
                 {"key": "type", "value": job_type},
             ],
             "relations": relations,
@@ -49,6 +49,28 @@ def start_job(
         get_rabbit,
     )
     return job["_id"]
+
+def start_job(
+    id,
+    id_of_document_job_was_initiated_for=None,
+    type_of_document_job_was_initiated_for=None,
+    *,
+    get_rabbit,
+):
+    document = {
+        "id": id,
+        "patch": {
+            "metadata": [{"key": "status", "value": "running"}],
+            "relations": ([] if id_of_document_job_was_initiated_for else []),
+        },
+    }
+    _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
+    __patch_document_job_was_initiated_for_v2(
+        id,
+        id_of_document_job_was_initiated_for,
+        type_of_document_job_was_initiated_for,
+        get_rabbit,
+    )
 
 
 def add_document_to_job(
