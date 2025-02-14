@@ -17,8 +17,8 @@ class BaseObjectConfiguration(ABC):
                 overwrite=overwrite,
                 **kwargs,
             ),
-            "nested_matcher_builder": lambda object_lists, keys_info, value: self.__build_nested_matcher(
-                object_lists, keys_info, value
+            "nested_matcher_builder": lambda object_lists, keys_info, value, **kwargs: self.__build_nested_matcher(
+                object_lists, keys_info, value, **kwargs
             ),
             "post_crud_hook": lambda **kwargs: None,
             "pre_crud_hook": lambda *, document, **kwargs: document,
@@ -142,11 +142,16 @@ class BaseObjectConfiguration(ABC):
         sort_keys(document)
         return document
 
-    def __build_nested_matcher(self, object_lists, keys_info, value, index=0):
+    def __build_nested_matcher(
+        self, object_lists, keys_info, value, *, index=0, **kwargs
+    ):
         if index == 0 and not any(info["object_list"] for info in keys_info):
             if value in ["ANY_MATCH", "NONE_MATCH"]:
                 value = {"$exists": value == "ANY_MATCH"}
-            return {".".join(info["key"] for info in keys_info): value}
+            matcher = {".".join(info["key"] for info in keys_info): value}
+            if inner_exact_matches := kwargs.get("inner_exact_matches"):
+                matcher.update(inner_exact_matches)
+            return matcher
 
         info = keys_info[index]
 
@@ -155,7 +160,7 @@ class BaseObjectConfiguration(ABC):
                 "$elemMatch": {
                     object_lists[info["object_list"]]: info["object_key"],
                     **self.__build_nested_matcher(
-                        object_lists, keys_info[index + 1 :], value, 0
+                        object_lists, keys_info[index + 1 :], value, index=0, **kwargs
                     ),
                 }
             }
