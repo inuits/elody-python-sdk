@@ -11,6 +11,7 @@ from elody.exceptions import (
 )
 from elody.validator import validate_json
 from elody.schemas import entity_schema, mediafile_schema
+from dateutil import parser
 
 
 class CSVParser:
@@ -207,6 +208,16 @@ class CSVMultiObject(CSVParser):
                 return False
         return bool(value)
 
+    def is_datetime(self, value):
+        try:
+            parser.parse(value)
+            return True
+        except (ValueError, TypeError):
+            return False
+
+    def parse_datetime(self, value):
+        return parser.parse(value)
+
     def __fill_objects_from_csv(self):
         indexed_dict = dict()
         external_mediafiles_ids = []
@@ -300,6 +311,8 @@ class CSVMultiObject(CSVParser):
                             metadata_key = metadata_info.get("map_to", key)
                             indexed_dict[type][id].setdefault("metadata", list())
                             options = metadata_info.get("value_options")
+                            if self.is_datetime(value):
+                                value = self.parse_datetime(value)
                             if options and value not in options:
                                 if "invalid_value" not in self.get_errors():
                                     self.set_error("invalid_value", list())
