@@ -6,6 +6,33 @@ _create = _config.crud()["creator"]
 _post_crud_hook = _config.crud()["post_crud_hook"]
 
 
+def add_document_to_job(
+    id,
+    id_of_document_job_was_initiated_for,
+    type_of_document_job_was_initiated_for,
+    *,
+    get_rabbit,
+):
+    relations = []
+    if id_of_document_job_was_initiated_for and type_of_document_job_was_initiated_for:
+        relations.append(
+            {"key": id_of_document_job_was_initiated_for, "type": "isJobFor"}
+        )
+    document = {
+        "id": id,
+        "patch": {
+            "relations": (relations),
+        },
+    }
+    _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
+    __patch_document_job_was_initiated_for(
+        id,
+        id_of_document_job_was_initiated_for,
+        type_of_document_job_was_initiated_for,
+        get_rabbit,
+    )
+
+
 def init_job(
     name,
     job_type,
@@ -44,6 +71,7 @@ def init_job(
         crud="create", document=job, parent_id=parent_id, get_rabbit=get_rabbit
     )
     __patch_document_job_was_initiated_for(
+        job["_id"],
         id_of_document_job_was_initiated_for,
         type_of_document_job_was_initiated_for,
         get_rabbit,
@@ -74,33 +102,6 @@ def start_job(
     )
 
 
-def add_document_to_job(
-    id,
-    id_of_document_job_was_initiated_for,
-    type_of_document_job_was_initiated_for,
-    *,
-    get_rabbit,
-):
-    relations = []
-    if id_of_document_job_was_initiated_for and type_of_document_job_was_initiated_for:
-        relations.append(
-            {"key": id_of_document_job_was_initiated_for, "type": "isJobFor"}
-        )
-    document = {
-        "id": id,
-        "patch": {
-            "relations": (relations),
-        },
-    }
-    _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
-    __patch_document_job_was_initiated_for(
-        id,
-        id_of_document_job_was_initiated_for,
-        type_of_document_job_was_initiated_for,
-        get_rabbit,
-    )
-
-
 def finish_job(
     id,
     id_of_document_job_was_initiated_for=None,
@@ -117,6 +118,7 @@ def finish_job(
     }
     _post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
     __patch_document_job_was_initiated_for(
+        id,
         id_of_document_job_was_initiated_for,
         type_of_document_job_was_initiated_for,
         get_rabbit,
