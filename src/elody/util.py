@@ -270,15 +270,3 @@ def signal_update_copyright_color_mediafile(mq_client, mediafile_id):
 def signal_upload_file(mq_client, upload_links, selected_folder):
     data = {"upload_links": upload_links, "selected_folder": selected_folder}
     send_cloudevent(mq_client, "dams", "dams.upload_file", data)
-
-
-def signal_upload_external_mediafile(
-    mq_client, external_url, mediafile, ticket_id, job_id
-):
-    data = {
-        "external_url": external_url,
-        "mediafile": mediafile,
-        "ticket_id": ticket_id,
-        "job_id": job_id,
-    }
-    send_cloudevent(mq_client, "dams", "dams.upload_external_mediafile", data)
