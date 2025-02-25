@@ -53,7 +53,7 @@ class ErrorCode(Enum):
     TICKET_NOT_FOUND = ("4006", [])
     TICKET_EXPIRED = ("4007", [])
     PROVIDE_MEDIAFILE_ID_OR_TICKET_ID = ("4008", [])
-    DUPLICATE_FILE = ("4009", [])
+    DUPLICATE_FILE = ("4009", ["existing_file"])
     NO_BUCKET_SPECIFIED = ("4010", [])
 
     # Validation error codes
