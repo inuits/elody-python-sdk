@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from elody.object_configurations.base_object_configuration import (
     BaseObjectConfiguration,
 )
@@ -55,10 +54,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
 
         template = {
             "_id": _id,
-            "computed_values": {
-                "created_at": datetime.now(timezone.utc),
-                "event": "create",
-            },
             "identifiers": list(
                 set([_id, *identifiers, *document_defaults.pop("identifiers", [])])
             ),
@@ -66,8 +61,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "relations": [],
             "schema": {"type": self.SCHEMA_TYPE, "version": self.SCHEMA_VERSION},
         }
-        if user_context_id := self._get_user_context_id():
-            template["computed_values"]["created_by"] = user_context_id
 
         for key, object_list_key in self.document_info()["object_lists"].items():
             if not key.startswith("lookup.virtual_relations"):
@@ -122,7 +115,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
                 object_list_name="metadata",
                 object_list_value_field_name="value",
             )
-            document = self.__patch_document_computed_values(crud, document)
             document = self._sort_document_keys(document)
         return document
 
@@ -135,12 +127,3 @@ class ElodyConfiguration(BaseObjectConfiguration):
             if not element[object_list_value_field_name]:
                 sanitized_document[object_list_name].remove(element)
         return sanitized_document
-
-    def __patch_document_computed_values(self, crud, document):
-        if not document.get("computed_values"):
-            document["computed_values"] = {}
-        document["computed_values"].update({"event": crud})
-        document["computed_values"].update({"modified_at": datetime.now(timezone.utc)})
-        if email := self._get_user_context_id():
-            document["computed_values"].update({"modified_by": email})
-        return document
