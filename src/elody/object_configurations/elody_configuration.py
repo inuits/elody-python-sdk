@@ -132,33 +132,34 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def _sorting(self, key_order_map, **_):
         addFields, sort = {}, {}
         for key, order in key_order_map.items():
-            addFields.update(
-                {
-                    key: {
-                        "$arrayElemAt": [
-                            {
-                                "$map": {
-                                    "input": {
-                                        "$filter": {
-                                            "input": "$metadata",
-                                            "as": "metadata",
-                                            "cond": {
-                                                "$eq": ["$$metadata.key", key]
-                                            },
-                                        }
-                                    },
-                                    "as": "metadata",
-                                    "in": "$$metadata.value",
-                                }
-                            },
-                            0,
-                        ]
+            if key != "created_at":
+                addFields.update(
+                    {
+                        key: {
+                            "$arrayElemAt": [
+                                {
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$metadata",
+                                                "as": "metadata",
+                                                "cond": {
+                                                    "$eq": ["$$metadata.key", key]
+                                                },
+                                            }
+                                        },
+                                        "as": "metadata",
+                                        "in": "$$metadata.value",
+                                    }
+                                },
+                                0,
+                            ]
+                        }
                     }
-                }
-            )
+                )
             sort.update({key: order})
-        
-        addFields.update({
-            "created_at": "$created_at"
-        })
-        return [{"$addFields": addFields}, {"$sort": sort}]
+            
+        pipeline = [{"$sort": sort}]
+        if addFields:
+            pipeline.append({"$addFields": addFields})
+        return pipeline
