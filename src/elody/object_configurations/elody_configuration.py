@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from elody.object_configurations.base_object_configuration import (
     BaseObjectConfiguration,
 )
@@ -16,7 +17,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "creator": lambda post_body, **kwargs: self._creator(post_body, **kwargs),
             "post_crud_hook": lambda **kwargs: self._post_crud_hook(**kwargs),
             "pre_crud_hook": lambda **kwargs: self._pre_crud_hook(**kwargs),
-            "sorting": lambda key_order_map, **kwargs: self._sorting(key_order_map),
+            "sorting": lambda key_order_map, **kwargs: self._sorting(key_order_map, **kwargs),
         }
         return {**super().crud(), **crud}
 
@@ -116,6 +117,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                 object_list_name="metadata",
                 object_list_value_field_name="value",
             )
+            document = self.__patch_document(crud, document)
             document = self._sort_document_keys(document)
         return document
 
@@ -128,6 +130,12 @@ class ElodyConfiguration(BaseObjectConfiguration):
             if not element[object_list_value_field_name]:
                 sanitized_document[object_list_name].remove(element)
         return sanitized_document
+    
+    def __patch_document(self, crud, document):
+        document.update({"date_updated": datetime.now(timezone.utc)})
+        if email := self._get_user_context_id():
+            document.update({"last_editor": email})
+        return document
 
     def _sorting(self, key_order_map, **_):
         addFields, sort = {}, {}
