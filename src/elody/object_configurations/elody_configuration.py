@@ -16,6 +16,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "creator": lambda post_body, **kwargs: self._creator(post_body, **kwargs),
             "post_crud_hook": lambda **kwargs: self._post_crud_hook(**kwargs),
             "pre_crud_hook": lambda **kwargs: self._pre_crud_hook(**kwargs),
+            "sorting": lambda key_order_map, **kwargs: self._sorting(key_order_map),
         }
         return {**super().crud(), **crud}
 
@@ -127,3 +128,37 @@ class ElodyConfiguration(BaseObjectConfiguration):
             if not element[object_list_value_field_name]:
                 sanitized_document[object_list_name].remove(element)
         return sanitized_document
+
+    def _sorting(self, key_order_map, **_):
+        addFields, sort = {}, {}
+        for key, order in key_order_map.items():
+            addFields.update(
+                {
+                    key: {
+                        "$arrayElemAt": [
+                            {
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$metadata",
+                                            "as": "metadata",
+                                            "cond": {
+                                                "$eq": ["$$metadata.key", key]
+                                            },
+                                        }
+                                    },
+                                    "as": "metadata",
+                                    "in": "$$metadata.value",
+                                }
+                            },
+                            0,
+                        ]
+                    }
+                }
+            )
+            sort.update({key: order})
+        
+        addFields.update({
+            "created_at": "$created_at"
+        })
+        return [{"$addFields": addFields}, {"$sort": sort}]
