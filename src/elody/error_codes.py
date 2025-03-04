@@ -31,6 +31,7 @@ class ErrorCode(Enum):
     NO_PERMISSION_TO_TENANT = ("1010", ["tenant_id", "line_number"])
     XTENANT_NOT_FOUND = ("1011", ["x_tenant_id"])
     NO_DOWNLOAD_PERMISSION = ("1012", [])
+    INVALID_TOKEN = ("1013", [])
 
     # Database error codes
     DATABASE_NOT_INITIALIZED = ("2000", [])
