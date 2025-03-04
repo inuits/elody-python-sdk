@@ -65,7 +65,6 @@ def init_job(
         get_user_context=get_user_context
         or (lambda: type("UserContext", (object,), {"email": user_email})()),
     )
-    del job["computed_values"]["created_at"]
 
     _post_crud_hook(
         crud="create", document=job, parent_id=parent_id, get_rabbit=get_rabbit

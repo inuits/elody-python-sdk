@@ -17,6 +17,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "creator": lambda post_body, **kwargs: self._creator(post_body, **kwargs),
             "post_crud_hook": lambda **kwargs: self._post_crud_hook(**kwargs),
             "pre_crud_hook": lambda **kwargs: self._pre_crud_hook(**kwargs),
+            "sorting": lambda key_order_map, **kwargs: self._sorting(key_order_map, **kwargs),
         }
         return {**super().crud(), **crud}
 
@@ -55,10 +56,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
 
         template = {
             "_id": _id,
-            "computed_values": {
-                "created_at": datetime.now(timezone.utc),
-                "event": "create",
-            },
             "identifiers": list(
                 set([_id, *identifiers, *document_defaults.pop("identifiers", [])])
             ),
@@ -66,8 +63,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "relations": [],
             "schema": {"type": self.SCHEMA_TYPE, "version": self.SCHEMA_VERSION},
         }
-        if user_context_id := self._get_user_context_id():
-            template["computed_values"]["created_by"] = user_context_id
 
         for key, object_list_key in self.document_info()["object_lists"].items():
             if not key.startswith("lookup.virtual_relations"):
@@ -122,7 +117,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                 object_list_name="metadata",
                 object_list_value_field_name="value",
             )
-            document = self.__patch_document_computed_values(crud, document)
+            document = self.__patch_document(crud, document)
             document = self._sort_document_keys(document)
         return document
 
@@ -135,12 +130,44 @@ class ElodyConfiguration(BaseObjectConfiguration):
             if not element[object_list_value_field_name]:
                 sanitized_document[object_list_name].remove(element)
         return sanitized_document
-
-    def __patch_document_computed_values(self, crud, document):
-        if not document.get("computed_values"):
-            document["computed_values"] = {}
-        document["computed_values"].update({"event": crud})
-        document["computed_values"].update({"modified_at": datetime.now(timezone.utc)})
+    
+    def __patch_document(self, crud, document):
+        document.update({"date_updated": datetime.now(timezone.utc)})
         if email := self._get_user_context_id():
-            document["computed_values"].update({"modified_by": email})
+            document.update({"last_editor": email})
         return document
+
+    def _sorting(self, key_order_map, **_):
+        addFields, sort = {}, {}
+        for key, order in key_order_map.items():
+            if key != "created_at":
+                addFields.update(
+                    {
+                        key: {
+                            "$arrayElemAt": [
+                                {
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$metadata",
+                                                "as": "metadata",
+                                                "cond": {
+                                                    "$eq": ["$$metadata.key", key]
+                                                },
+                                            }
+                                        },
+                                        "as": "metadata",
+                                        "in": "$$metadata.value",
+                                    }
+                                },
+                                0,
+                            ]
+                        }
+                    }
+                )
+            sort.update({key: order})
+            
+        pipeline = [{"$sort": sort}]
+        if addFields:
+            pipeline.append({"$addFields": addFields})
+        return pipeline
