@@ -31,7 +31,7 @@ class JobConfiguration(ElodyConfiguration):
     def _creator(self, post_body, *, get_user_context={}, **_):
         document = super()._creator(post_body)
         if email := get_user_context().email:
-            document["created_by"] = email
+            document["last_editor"] = email
         return document
 
     def _post_crud_hook(self, *, crud, document, get_rabbit, **kwargs):

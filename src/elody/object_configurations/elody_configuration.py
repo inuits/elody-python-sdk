@@ -17,7 +17,9 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "creator": lambda post_body, **kwargs: self._creator(post_body, **kwargs),
             "post_crud_hook": lambda **kwargs: self._post_crud_hook(**kwargs),
             "pre_crud_hook": lambda **kwargs: self._pre_crud_hook(**kwargs),
-            "sorting": lambda key_order_map, **kwargs: self._sorting(key_order_map, **kwargs),
+            "sorting": lambda key_order_map, **kwargs: self._sorting(
+                key_order_map, **kwargs
+            ),
         }
         return {**super().crud(), **crud}
 
@@ -72,18 +74,10 @@ class ElodyConfiguration(BaseObjectConfiguration):
                     object_list_key,
                 )
         document = {**template, **document_defaults, **post_body}
-
-        document = self._sanitize_document(
-            document=document,
-            object_list_name="metadata",
-            object_list_value_field_name="value",
-        )
-        document = self._sort_document_keys(document)
+        document = self._pre_crud_hook(crud="create", document=document)
         return document
 
-    def _document_content_patcher(
-        self, *, document, content, overwrite=False, **kwargs
-    ):
+    def _document_content_patcher(self, *, document, content, overwrite=False, **_):
         object_lists = self.document_info().get("object_lists", {})
         if overwrite:
             document = content
@@ -130,9 +124,9 @@ class ElodyConfiguration(BaseObjectConfiguration):
             if not element[object_list_value_field_name]:
                 sanitized_document[object_list_name].remove(element)
         return sanitized_document
-    
+
     def __patch_document(self, crud, document):
-        document.update({"date_updated": datetime.now(timezone.utc)})
+        document.update({f"date_{crud}d": datetime.now(timezone.utc)})
         if email := self._get_user_context_id():
             document.update({"last_editor": email})
         return document
@@ -140,7 +134,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def _sorting(self, key_order_map, **_):
         addFields, sort = {}, {}
         for key, order in key_order_map.items():
-            if key != "created_at":
+            if key not in ["date_created", "date_updated", "last_editor"]:
                 addFields.update(
                     {
                         key: {
@@ -166,7 +160,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                     }
                 )
             sort.update({key: order})
-            
+
         pipeline = [{"$sort": sort}]
         if addFields:
             pipeline.append({"$addFields": addFields})
