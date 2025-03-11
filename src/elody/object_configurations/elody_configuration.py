@@ -160,8 +160,8 @@ class ElodyConfiguration(BaseObjectConfiguration):
                     }
                 )
             sort.update({key: order})
-
-        pipeline = [{"$sort": sort}]
+        pipeline = []
         if addFields:
             pipeline.append({"$addFields": addFields})
+        pipeline.append({"$sort": sort})
         return pipeline
