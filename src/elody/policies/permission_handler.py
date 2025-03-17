@@ -49,7 +49,13 @@ def __replace_permission_placeholders(data, placeholder_key, placeholder_value):
 
 
 def handle_single_item_request(
-    user_context: UserContext, item, permissions, crud, request_body: dict = {}
+    user_context: UserContext,
+    item,
+    permissions,
+    crud,
+    request_body: dict = {},
+    *,
+    key_to_check=None,
 ):
     try:
         item_in_storage_format, flat_item, object_lists, restrictions_schema = (
@@ -72,6 +78,7 @@ def handle_single_item_request(
             crud,
             object_lists,
             flatten_dict(object_lists, request_body),
+            key_to_check=key_to_check,
         )
     except Exception as exception:
         log.debug(
@@ -174,6 +181,8 @@ def __is_allowed_to_crud_item_keys(
     crud,
     object_lists,
     flat_request_body: dict = {},
+    *,
+    key_to_check=None,
 ):
     user_context.bag["restricted_keys"] = []
     restrictions = restrictions_schema.get("key_restrictions", {})
@@ -201,12 +210,18 @@ def __is_allowed_to_crud_item_keys(
                         )
                         if element:
                             item_in_storage_format[info["key"]].remove(element)
+                            if key_to_check and key_to_check == restricted_key:
+                                user_context.bag["restricted_keys"].append(
+                                    restricted_key
+                                )
                         break
                 else:
                     try:
                         del item_in_storage_format[keys_info[0]["key"]][
                             keys_info[1]["key"]
                         ]
+                        if key_to_check and key_to_check == restricted_key:
+                            user_context.bag["restricted_keys"].append(restricted_key)
                     except KeyError:
                         pass
             else:

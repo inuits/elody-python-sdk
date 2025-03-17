@@ -68,7 +68,13 @@ class GetRequestRules:
         if request.method != "GET":
             return None
 
-        return handle_single_item_request(user_context, item, permissions, "read")
+        return handle_single_item_request(
+            user_context,
+            item,
+            permissions,
+            "read",
+            key_to_check=request.args.get("key_to_check"),
+        )
 
 
 class PutRequestRules:
