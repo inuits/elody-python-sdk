@@ -1,5 +1,5 @@
 from elody.object_configurations.job_configuration import JobConfiguration
-
+from datetime import datetime, timezone
 
 _config = JobConfiguration()
 _create = _config.crud()["creator"]
@@ -88,6 +88,7 @@ def start_job(
     document = {
         "id": id,
         "patch": {
+            "started_at": datetime.now(timezone.utc),
             "metadata": [{"key": "status", "value": "running"}],
             "relations": ([] if id_of_document_job_was_initiated_for else []),
         },
