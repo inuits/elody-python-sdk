@@ -210,20 +210,16 @@ def __is_allowed_to_crud_item_keys(
                         )
                         if element:
                             item_in_storage_format[info["key"]].remove(element)
-                            if key_to_check and key_to_check == restricted_key:
-                                user_context.bag["restricted_keys"].append(
-                                    restricted_key
-                                )
                         break
                 else:
                     try:
                         del item_in_storage_format[keys_info[0]["key"]][
                             keys_info[1]["key"]
                         ]
-                        if key_to_check and key_to_check == restricted_key:
-                            user_context.bag["restricted_keys"].append(restricted_key)
                     except KeyError:
                         pass
+                if key_to_check and key_to_check == restricted_key:
+                    user_context.bag["restricted_keys"].append(restricted_key)
             else:
                 if flat_request_body.get(restricted_key):
                     user_context.bag["restricted_keys"].append(restricted_key)
