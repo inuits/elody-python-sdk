@@ -270,6 +270,7 @@ class CSVMultiObject(CSVParser):
                 for key, value in row.items():
                     if not value:
                         continue
+                    original_value = value
                     if key != identifying_column:
                         value = value.lower()
                     if key == "file_source":
@@ -301,7 +302,7 @@ class CSVMultiObject(CSVParser):
                     elif key in self.top_level_fields and self.__field_allowed(
                         type, key, value
                     ):
-                        indexed_dict[type][id][key] = value
+                        indexed_dict[type][id][key] = original_value
                     elif (
                         key not in self.index_mapping.values()
                         or self.include_indexed_field
@@ -312,7 +313,7 @@ class CSVMultiObject(CSVParser):
                             indexed_dict[type][id].setdefault("metadata", list())
                             options = metadata_info.get("value_options")
                             if self.is_datetime(value):
-                                value = self.parse_datetime(value)
+                                original_value = self.parse_datetime(value)
                             if options and value not in options:
                                 if "invalid_value" not in self.get_errors():
                                     self.set_error("invalid_value", list())
@@ -320,7 +321,7 @@ class CSVMultiObject(CSVParser):
                                 self.get_errors()["invalid_value"].append(message)
 
                             indexed_dict[type][id]["metadata"].append(
-                                self._get_metadata_object(metadata_key, value, lang)
+                                self._get_metadata_object(metadata_key, original_value, lang)
                             )
         self.__validate_indexed_dict(indexed_dict)
         self.__add_required_fields(indexed_dict)
