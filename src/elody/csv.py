@@ -321,7 +321,9 @@ class CSVMultiObject(CSVParser):
                                 self.get_errors()["invalid_value"].append(message)
 
                             indexed_dict[type][id]["metadata"].append(
-                                self._get_metadata_object(metadata_key, original_value, lang)
+                                self._get_metadata_object(
+                                    metadata_key, original_value, lang
+                                )
                             )
         self.__validate_indexed_dict(indexed_dict)
         self.__add_required_fields(indexed_dict)

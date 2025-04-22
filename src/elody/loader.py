@@ -21,18 +21,22 @@ def load_jobs(scheduler, logger):
     apps = util.read_json_as_dict(os.getenv("APPS_MANIFEST"), logger)
     for app in apps:
         for job, job_properties in apps[app].get("jobs", {}).items():
-            try:
-                job_class = __get_class_from_module(
-                    import_module(f"apps.{app}.cron_jobs.{job}")
-                )
+            module_paths = [f"apps.{app}.cron_jobs.{job}", f"cron_jobs.{job}"]
+            module = None
+            for path in module_paths:
+                try:
+                    module = import_module(path)
+                    break
+                except ModuleNotFoundError:
+                    pass
+            if module:
+                job_class = __get_class_from_module(module)
                 scheduler.add_job(
                     job_class(),
                     CronTrigger.from_crontab(
                         job_properties.get("expression", "0 0 * * *")
                     ),
                 )
-            except ModuleNotFoundError:
-                pass
 
 
 def load_policies(
