@@ -29,9 +29,11 @@ class MultiTenantPolicy(BaseAuthenticationPolicy):
 
     def __allowed_url_rule_with_api_key_hash(self, url_rule):
         return str(url_rule) in [
-            "/tickets/<string:id>",
+            "/download/<string:app_id>/<string:mediafile_id_prefix>/<string:mediafile_id>/<string:filename>",
+            "/media/<string:app_id>/<string:mediafile_id_prefix>/<string:mediafile_id>/<string:filename>",
             "/mediafiles/<string:id>",
             "/mediafiles/<string:id>/copyright",
+            "/tickets/<string:id>",
         ]
 
     def __get_tenant_id_from_hashed_api_key(self, api_key_hash):
