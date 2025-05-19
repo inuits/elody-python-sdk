@@ -45,10 +45,10 @@ class ElodyConfiguration(BaseObjectConfiguration):
         flat_post_body={},
         document_defaults={},
     ):
-        if not flat_post_body:
-            flat_post_body = flatten_dict(
-                self.document_info()["object_lists"], post_body
-            )
+        flat_post_body = flat_post_body or flatten_dict(
+            self.document_info()["object_lists"],
+            post_body if isinstance(post_body, dict) else {},
+        )
         _id = document_defaults.get("_id", str(uuid4()))
 
         identifiers = []
@@ -66,14 +66,17 @@ class ElodyConfiguration(BaseObjectConfiguration):
             "schema": {"type": self.SCHEMA_TYPE, "version": self.SCHEMA_VERSION},
         }
 
-        for key, object_list_key in self.document_info()["object_lists"].items():
-            if not key.startswith("lookup.virtual_relations"):
-                post_body[key] = self._merge_object_lists(
-                    document_defaults.get(key, []),
-                    post_body.get(key, []),
-                    object_list_key,
-                )
-        document = {**template, **document_defaults, **post_body}
+        if isinstance(post_body, dict):
+            for key, object_list_key in self.document_info()["object_lists"].items():
+                if not key.startswith("lookup.virtual_relations"):
+                    post_body[key] = self._merge_object_lists(
+                        document_defaults.get(key, []),
+                        post_body.get(key, []),
+                        object_list_key,
+                    )
+            document = {**template, **document_defaults, **post_body}
+        else:
+            document = {**template, **document_defaults}
         document = self._pre_crud_hook(crud="create", document=document)
         return document
 
