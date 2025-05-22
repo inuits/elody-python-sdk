@@ -50,6 +50,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             post_body if isinstance(post_body, dict) else {},
         )
         _id = document_defaults.get("_id", str(uuid4()))
+        timestamp = datetime.now(timezone.utc)
 
         identifiers = []
         for property in self.document_info().get("identifier_properties", []):
@@ -77,7 +78,9 @@ class ElodyConfiguration(BaseObjectConfiguration):
             document = {**template, **document_defaults, **post_body}
         else:
             document = {**template, **document_defaults}
-        document = self._pre_crud_hook(crud="create", document=document)
+        document = self._pre_crud_hook(
+            crud="create", timestamp=timestamp, document=document
+        )
         return document
 
     def _document_content_patcher(self, *, document, content, overwrite=False, **_):
@@ -107,31 +110,51 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def _post_crud_hook(self, **kwargs):
         pass
 
-    def _pre_crud_hook(self, *, crud, document={}, **kwargs):
+    def _pre_crud_hook(self, *, crud, timestamp, document={}, **kwargs):
         if document:
+            document = self.__patch_document_unique_value(document)
+            document = self.__patch_document_audit_info(crud, document, timestamp)
             document = self._sanitize_document(
                 document=document,
                 object_list_name="metadata",
                 object_list_value_field_name="value",
             )
-            document = self.__patch_document(crud, document)
+            document = self._sanitize_document(
+                document=document,
+                object_list_name="relations",
+                object_list_value_field_name="key",
+            )
             document = self._sort_document_keys(document)
         return document
 
     def _sanitize_document(
         self, *, document, object_list_name, object_list_value_field_name, **kwargs
     ):
-        sanitized_document = super()._sanitize_document(document=document)
-        object_list = document[object_list_name]
-        for element in object_list:
-            if not element[object_list_value_field_name]:
+        sanitized_document = super()._sanitize_document(document=document, **kwargs)
+        for element in document[object_list_name]:
+            if not element.get(object_list_value_field_name):
                 sanitized_document[object_list_name].remove(element)
+        for element in sanitized_document[object_list_name]:
+            value = element[object_list_value_field_name]
+            if isinstance(value, str):
+                lines = value.splitlines()
+                value = "\n".join(line.strip() for line in lines).strip()
+                element[object_list_value_field_name] = value.strip()
         return sanitized_document
 
-    def __patch_document(self, crud, document):
-        document.update({f"date_{crud}d": datetime.now(timezone.utc)})
+    def __patch_document_audit_info(self, crud, document, timestamp):
+        document.update({f"date_{crud}d": timestamp})
         if email := self._get_user_context_id():
             document.update({"last_editor": email})
+        return document
+
+    def __patch_document_unique_value(self, document):
+        if unique_field := self.document_info().get("unique_field"):
+            flat_document = flatten_dict(
+                self.document_info().get("object_lists", {}), document
+            )
+            if value := flat_document.get(unique_field):
+                document["unique_field"] = f"{document['type']}:{value}"
         return document
 
     def _sorting(self, key_order_map, **_):

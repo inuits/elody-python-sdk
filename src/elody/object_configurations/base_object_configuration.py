@@ -104,7 +104,15 @@ class BaseObjectConfiguration(ABC):
                 if sanitized_value:
                     sanitized_document[key] = sanitized_value
             elif isinstance(value, list):
-                sanitized_document[key] = [element for element in value if element]
+                sanitized_document[key] = [
+                    element.strip() if isinstance(element, str) else element
+                    for element in value
+                    if element
+                ]
+            elif isinstance(value, str):
+                lines = value.splitlines()
+                value = "\n".join(line.strip() for line in lines).strip()
+                sanitized_document[key] = value.strip()
             elif value:
                 sanitized_document[key] = value
         return sanitized_document
