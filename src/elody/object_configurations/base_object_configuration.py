@@ -109,6 +109,8 @@ class BaseObjectConfiguration(ABC):
                     for element in value
                     if element
                 ]
+                if all(isinstance(element, str) for element in sanitized_document[key]):
+                    sanitized_document[key] = list(set(sanitized_document[key]))
             elif isinstance(value, str):
                 lines = value.splitlines()
                 value = "\n".join(line.strip() for line in lines).strip()
