@@ -5,7 +5,7 @@ from elody.policies.permission_handler import (
     get_permissions,
     mask_protected_content_post_request_hook,
 )
-from flask import Request  # pyright: ignore
+from flask import g, Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
     PolicyContext,
@@ -26,7 +26,7 @@ class FilterGenericObjectsPolicyV2(BaseAuthorizationPolicy):
         if not isinstance(user_context.access_restrictions.filters, list):
             user_context.access_restrictions.filters = []
         type_filter, filters = self.__split_type_filter(
-            user_context, deepcopy(request.json or [])
+            user_context, deepcopy(g.get("content") or request.json or [])
         )
         if not type_filter:
             policy_context.access_verdict = True
