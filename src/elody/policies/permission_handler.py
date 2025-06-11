@@ -3,9 +3,11 @@ import re as regex
 from configuration import get_object_configuration_mapper  # pyright: ignore
 from copy import deepcopy
 from elody.error_codes import ErrorCode, get_error_code, get_read
+from elody.policies.helpers import get_item
 from elody.util import flatten_dict, interpret_flat_key
 from inuits_policy_based_auth.contexts.user_context import UserContext
 from logging_elody.log import log  # pyright: ignore
+from storage.storagemanager import StorageManager  # pyright: ignore
 
 
 _permissions = {}
@@ -63,7 +65,7 @@ def handle_single_item_request(
         )
 
         is_allowed_to_crud_item = (
-            __is_allowed_to_crud_item(flat_item, restrictions_schema)
+            __is_allowed_to_crud_item(flat_item, restrictions_schema, user_context)
             if flat_item
             else None
         )
@@ -131,10 +133,7 @@ def __prepare_item_for_permission_check(item, permissions, crud):
     if item.get("type", "") not in permissions[crud].keys():
         return item, None, None, None
 
-    config = get_object_configuration_mapper().get(item["type"])
-    object_lists = config.document_info().get("object_lists", {})
-    flat_item = flatten_dict(object_lists, item)
-
+    flat_item, object_lists = __get_flat_item_and_object_lists(item)
     return (
         item,
         flat_item,
@@ -159,13 +158,15 @@ def __get_restrictions_schema(flat_item, permissions, crud):
     return schemas[schema] if schemas and schema else {}
 
 
-def __is_allowed_to_crud_item(flat_item, restrictions_schema):
+def __is_allowed_to_crud_item(
+    flat_item, restrictions_schema, user_context: UserContext
+):
     restrictions = restrictions_schema.get("object_restrictions", {})
 
     for restricted_key, restricting_values in restrictions.items():
         restricted_key = restricted_key.split(":")[1]
         item_value_in_restricting_values = __item_value_in_values(
-            flat_item, restricted_key, restricting_values
+            flat_item, restricted_key, restricting_values, {}, user_context
         )
         if not item_value_in_restricting_values:
             return None
@@ -192,7 +193,11 @@ def __is_allowed_to_crud_item_keys(
         condition_match = True
         for condition_key, condition_values in restricting_conditions.items():
             condition_match = __item_value_in_values(
-                flat_item, condition_key, condition_values, flat_request_body
+                flat_item,
+                condition_key,
+                condition_values,
+                flat_request_body,
+                user_context,
             )
             if not condition_match:
                 break
@@ -228,7 +233,9 @@ def __is_allowed_to_crud_item_keys(
     return len(user_context.bag["restricted_keys"]) == 0
 
 
-def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict = {}):
+def __item_value_in_values(
+    flat_item, key, values: list, flat_request_body, user_context: UserContext
+):
     negate_condition = False
     is_optional = False
 
@@ -239,6 +246,10 @@ def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict
         key = key[1:]
         is_optional = True
 
+    key_of_relation = None
+    if (keys := key.split("@", 1)) and len(keys) == 2:
+        key = keys[0]
+        key_of_relation = keys[1].split("-", 1)[1]
     try:
         item_value = flat_request_body.get(key, flat_item[key])
         if is_optional:
@@ -249,6 +260,15 @@ def __item_value_in_values(flat_item, key, values: list, flat_request_body: dict
                 f"{get_error_code(ErrorCode.METADATA_KEY_UNDEFINED, get_read())} | key:{key} | document:{flat_item.get('_id', flat_item["type"])} - Key {key} not found in document {flat_item.get('_id', flat_item["type"])}. Either prefix the key with '?' in your permission configuration to make it an optional restriction, or patch the document to include the key. '?' will allow access if key does not exist, '!?' will deny access if key does not exist."
             )
         return not negate_condition
+    else:
+        if key_of_relation:
+            if isinstance(item_value, list):
+                item_value = item_value[0]
+            item = get_item(StorageManager(), user_context.bag, {"id": item_value})
+            flat_item, _ = __get_flat_item_and_object_lists(item)
+            return __item_value_in_values(
+                flat_item, key_of_relation, values, flat_request_body, user_context
+            )
 
     expected_values = []
     for value in values:
@@ -280,3 +300,9 @@ def __get_element_from_object_list_of_item(
         if element[object_lists[object_list]] == key:
             return element
     return {}
+
+
+def __get_flat_item_and_object_lists(item):
+    config = get_object_configuration_mapper().get(item["type"])
+    object_lists = config.document_info().get("object_lists", {})
+    return flatten_dict(object_lists, item), object_lists

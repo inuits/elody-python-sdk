@@ -1,7 +1,10 @@
 import re as regex
 
 from configuration import get_object_configuration_mapper  # pyright: ignore
-from elody.policies.helpers import get_content
+from elody.policies.helpers import (
+    generate_filter_key_and_lookup_from_restricted_key,
+    get_content,
+)
 from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
@@ -82,7 +85,7 @@ class GetRequestRules:
                     type_permissions[schemas[0]].get("object_restrictions", {}).keys()
                 )
                 for i in range(number_of_object_restrictions):
-                    keys, values = [], []
+                    lookup, keys, values = {}, [], []
                     for schema in schemas:
                         object_restrictions = type_permissions[schema].get(
                             "object_restrictions", {}
@@ -92,10 +95,16 @@ class GetRequestRules:
                             for key in object_restrictions.keys()
                             if key.startswith(f"{i}:")
                         ][0]
-                        keys.append(f"{schema}|{key.split(':')[1]}")
                         values = object_restrictions[key]
+                        key, lookup = (
+                            generate_filter_key_and_lookup_from_restricted_key(
+                                key.split(":")[1]
+                            )
+                        )
+                        keys.append(f"{schema}|{key}")
                     filters.append(
                         {
+                            "lookup": lookup,
                             "type": "selection",
                             "key": keys,
                             "value": values,

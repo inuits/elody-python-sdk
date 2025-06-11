@@ -1,6 +1,7 @@
 import re as regex
 
 from copy import deepcopy
+from elody.policies.helpers import generate_filter_key_and_lookup_from_restricted_key
 from elody.policies.permission_handler import (
     get_permissions,
     mask_protected_content_post_request_hook,
@@ -123,6 +124,11 @@ class PostRequestRules:
                 restrictions = schemas[schema].get("object_restrictions", {})
                 for restricted_key, restricting_value in restrictions.items():
                     index, restricted_key = restricted_key.split(":")
+                    restricted_key, lookup = (
+                        generate_filter_key_and_lookup_from_restricted_key(
+                            restricted_key
+                        )
+                    )
                     key = f"{schema}|{restricted_key}"
                     if group := restrictions_grouped_by_index.get(index):
                         group["key"].append(key)
@@ -130,6 +136,7 @@ class PostRequestRules:
                         restrictions_grouped_by_index.update(
                             {
                                 index: {
+                                    "lookup": lookup,
                                     "key": [key],
                                     "value": restricting_value,
                                 }
@@ -155,6 +162,7 @@ class PostRequestRules:
             for restriction in restrictions_grouped_by_index.values():
                 user_context.access_restrictions.filters.append(  # pyright: ignore
                     {
+                        "lookup": restriction["lookup"],
                         "type": "selection",
                         "key": restriction["key"],
                         "value": restriction["value"],

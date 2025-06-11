@@ -4,6 +4,24 @@ from serialization.serialize import serialize  # pyright: ignore
 from werkzeug.exceptions import NotFound
 
 
+def generate_filter_key_and_lookup_from_restricted_key(key):
+    if (keys := key.split("@", 1)) and len(keys) == 1:
+        return key, {}
+
+    local_field = keys[0]
+    document_type, key = keys[1].split("-", 1)
+    collection = (
+        get_object_configuration_mapper().get(document_type).crud()["collection"]
+    )
+    lookup = {
+        "from": collection,
+        "local_field": local_field,
+        "foreign_field": "identifiers",
+        "as": f"__lookup.virtual_relations.{document_type}",
+    }
+    return f"{lookup['as']}.{key}", lookup
+
+
 def get_content(item, request, content):
     return serialize(
         content,
