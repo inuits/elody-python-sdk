@@ -1,9 +1,8 @@
 import re as regex
 
-from configuration import get_object_configuration_mapper  # pyright: ignore
 from copy import deepcopy
 from elody.error_codes import ErrorCode, get_error_code, get_read
-from elody.policies.helpers import get_item
+from elody.policies.helpers import get_flat_item_and_object_lists, get_item
 from elody.util import flatten_dict, interpret_flat_key
 from inuits_policy_based_auth.contexts.user_context import UserContext
 from logging_elody.log import log  # pyright: ignore
@@ -133,7 +132,7 @@ def __prepare_item_for_permission_check(item, permissions, crud):
     if item.get("type", "") not in permissions[crud].keys():
         return item, None, None, None
 
-    flat_item, object_lists = __get_flat_item_and_object_lists(item)
+    flat_item, object_lists = get_flat_item_and_object_lists(item)
     return (
         item,
         flat_item,
@@ -265,7 +264,7 @@ def __item_value_in_values(
             if isinstance(item_value, list):
                 item_value = item_value[0]
             item = get_item(StorageManager(), user_context.bag, {"id": item_value})
-            flat_item, _ = __get_flat_item_and_object_lists(item)
+            flat_item, _ = get_flat_item_and_object_lists(item)
             return __item_value_in_values(
                 flat_item, key_of_relation, values, flat_request_body, user_context
             )
@@ -300,9 +299,3 @@ def __get_element_from_object_list_of_item(
         if element[object_lists[object_list]] == key:
             return element
     return {}
-
-
-def __get_flat_item_and_object_lists(item):
-    config = get_object_configuration_mapper().get(item["type"])
-    object_lists = config.document_info().get("object_lists", {})
-    return flatten_dict(object_lists, item), object_lists

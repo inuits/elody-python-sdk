@@ -1,5 +1,6 @@
 from configuration import get_object_configuration_mapper  # pyright: ignore
 from elody.error_codes import ErrorCode, get_error_code, get_read
+from elody.util import flatten_dict
 from serialization.serialize import serialize  # pyright: ignore
 from werkzeug.exceptions import NotFound
 
@@ -31,6 +32,12 @@ def get_content(item, request, content):
         ),
         to_format=get_object_configuration_mapper().get(item["type"]).SCHEMA_TYPE,
     )
+
+
+def get_flat_item_and_object_lists(item):
+    config = get_object_configuration_mapper().get(item["type"])
+    object_lists = config.document_info().get("object_lists", {})
+    return flatten_dict(object_lists, item), object_lists
 
 
 def get_item(storage_manager, user_context_bag, view_args) -> dict:
