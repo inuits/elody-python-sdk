@@ -156,8 +156,9 @@ class PostRequestRules:
                         if isinstance(filter["value"], list)
                         else [filter["value"]]
                     )
-                    if not any(value in restriction["value"] for value in values):
-                        return False
+                    for value in values:
+                        if value not in restriction["value"] and value not in ["", "*"]:
+                            return False
 
             for restriction in restrictions_grouped_by_index.values():
                 user_context.access_restrictions.filters.append(  # pyright: ignore
