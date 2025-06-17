@@ -145,7 +145,8 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def __patch_document_audit_info(self, crud, document, timestamp):
         document.update({f"date_{crud}d": timestamp})
         if email := self._get_user_context_id():
-            document.update({"last_editor": email})
+            label = f"{crud}d_by" if crud == "create" else "last_editor"
+            document.update({label: email})
         return document
 
     def __patch_document_unique_value(self, document):
