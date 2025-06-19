@@ -210,7 +210,7 @@ class Client:
         print(upload_location)
         mediafile = requests.get(file_url, proxies=self.proxies).content
         response = requests.post(
-            upload_location,
+            upload_location.replace('"', ""),
             files={"file": mediafile},
             headers=self.headers,
             proxies=self.proxies,
