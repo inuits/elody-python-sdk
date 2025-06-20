@@ -197,6 +197,7 @@ class Client:
         identifiers=None,
         upload_location_replace_map=None,
         mediafile_object=None,
+        user_email=None,
     ):
         if not identifiers:
             identifiers = list()
@@ -207,10 +208,13 @@ class Client:
         )
         for current_location, new_location in upload_location_replace_map.items():
             upload_location = upload_location.replace(current_location, new_location)
+        upload_location = upload_location.replace('"', "")
+        if user_email and "&user_email" not in upload_location:
+            upload_location = f"{upload_location}&user_email={user_email}"
         print(upload_location)
         mediafile = requests.get(file_url, proxies=self.proxies).content
         response = requests.post(
-            upload_location.replace('"', ""),
+            upload_location,
             files={"file": mediafile},
             headers=self.headers,
             proxies=self.proxies,
