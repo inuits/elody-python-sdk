@@ -204,7 +204,7 @@ class Client:
         if not upload_location_replace_map:
             upload_location_replace_map = dict()
         upload_location = self.__get_upload_location(
-            entity_id, filename, True, identifiers, mediafile_object
+            entity_id, filename, False, identifiers, mediafile_object
         )
         for current_location, new_location in upload_location_replace_map.items():
             upload_location = upload_location.replace(current_location, new_location)
