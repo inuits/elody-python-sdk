@@ -210,10 +210,14 @@ class CSVMultiObject(CSVParser):
 
     def is_datetime(self, value):
         try:
-            parser.parse(value)
-            return True
-        except (ValueError, TypeError):
+            int(value)
             return False
+        except (ValueError, TypeError):
+            try:
+                parser.parse(value)
+                return True
+            except (ValueError, TypeError):
+                return False
 
     def parse_datetime(self, value):
         return parser.parse(value)
