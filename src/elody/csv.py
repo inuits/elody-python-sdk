@@ -274,6 +274,13 @@ class CSVMultiObject(CSVParser):
                 for key, value in row.items():
                     if not value:
                         continue
+                    if not key or isinstance(value, list):
+                        if len(value) == 1 and value[0] == '':
+                            continue
+                        if "invalid_value" not in self.get_errors():
+                            self.set_error("invalid_value", list())
+                        message = f'{get_error_code(ErrorCode.INVALID_VALUE, get_write())} | value:{value} | line_number:{row_number} - The value "{value}" is invalid, most likely caused by exceeding allowed columns.'
+                        self.get_errors()["invalid_value"].append(message)
                     original_value = value
                     if key != identifying_column:
                         value = value.lower()
