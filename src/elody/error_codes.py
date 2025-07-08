@@ -75,6 +75,7 @@ class ErrorCode(Enum):
     INVALID_ACCEPT_HEADER = ("5015", [])
     INVALID_VALUE = ("5016", ["value", "options", "line_number"])
     ITEM_WITH_VALUE_FOR_KEY_NOT_FOUND = ("5017", ["key", "value", "line_number"])
+    ITEM_WITH_VALUE_FOR_KEY_NOT_UNIQUE = ("5018", ["key", "value", "line_number"])
 
     # Filter error codes
     NO_MATCHER_FOR_FILTER_REQUEST = ("6001", [])
