@@ -275,7 +275,7 @@ class CSVMultiObject(CSVParser):
                     if not value:
                         continue
                     if not key or isinstance(value, list):
-                        if len(value) == 1 and value[0] == '':
+                        if len(value) == 1 and value[0] == "":
                             continue
                         if "invalid_value" not in self.get_errors():
                             self.set_error("invalid_value", list())

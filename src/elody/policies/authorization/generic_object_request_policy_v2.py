@@ -18,6 +18,7 @@ from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignor
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
+from werkzeug.exceptions import BadRequest
 
 
 class GenericObjectRequestPolicyV2(BaseAuthorizationPolicy):
@@ -113,28 +114,13 @@ class GetRequestRules:
                     )
             filters.insert(0, {"type": "type", "value": type_query_parameter})
         else:
-            filters.append(
-                {
-                    "type": "selection",
-                    "key": "type",
-                    "value": allowed_item_types,
-                    "match_exact": True,
-                }
-            )
-            if tenant_relation_type := user_context.bag.get("tenant_relation_type"):
-                filters.append(
-                    {
-                        "type": "selection",
-                        "key": tenant_relation_type,
-                        "value": [
-                            "tenant:super",
-                            user_context.bag.get(
-                                "tenant_defining_entity_id", user_context.x_tenant.id
-                            ),
-                        ],
-                        "match_exact": True,
-                    }
-                )
+            """
+            Allowing no type_query_parameter will expose following security risks:
+                - object_restrictions not being applied
+                - inability to determine collection to execute filters
+            => if no type_query_parameter is a business requirement, override this policy for that specific client and consider the security risks
+            """
+            raise BadRequest("Query parameter 'type' is required")
 
         user_context.access_restrictions.filters = filters
         user_context.access_restrictions.post_request_hook = (

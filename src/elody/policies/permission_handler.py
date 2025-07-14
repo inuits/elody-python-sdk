@@ -59,7 +59,7 @@ def handle_single_item_request(
     key_to_check=None,
 ):
     try:
-        item_in_storage_format, flat_item, object_lists, restrictions_schema = (
+        item, flat_item, object_lists, restrictions_schema = (
             __prepare_item_for_permission_check(item, permissions, crud)
         )
 
@@ -73,7 +73,7 @@ def handle_single_item_request(
 
         return __is_allowed_to_crud_item_keys(
             user_context,
-            item_in_storage_format,
+            item,
             flat_item,
             restrictions_schema,
             crud,
@@ -84,7 +84,7 @@ def handle_single_item_request(
     except Exception as exception:
         log.debug(
             f"{exception.__class__.__name__}: {str(exception)}",
-            item.get("storage_format", item),
+            item,
         )
         if crud != "read":
             log.debug(f"Request body: {request_body}", {})
@@ -97,7 +97,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
         for item in response["results"]:
             try:
                 (
-                    item_in_storage_format,
+                    item,
                     flat_item,
                     object_lists,
                     restrictions_schema,
@@ -107,7 +107,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
 
                 __is_allowed_to_crud_item_keys(
                     user_context,
-                    item_in_storage_format,
+                    item,
                     flat_item,
                     restrictions_schema,
                     "read",
@@ -117,7 +117,7 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
             except Exception as exception:
                 log.debug(
                     f"{exception.__class__.__name__}: {str(exception)}",
-                    item.get("storage_format", item),
+                    item,
                 )
                 raise exception
 
@@ -128,7 +128,6 @@ def mask_protected_content_post_request_hook(user_context: UserContext, permissi
 
 
 def __prepare_item_for_permission_check(item, permissions, crud):
-    item = deepcopy(item.get("storage_format", item))
     if item.get("type", "") not in permissions[crud].keys():
         return item, None, None, None
 
@@ -175,7 +174,7 @@ def __is_allowed_to_crud_item(
 
 def __is_allowed_to_crud_item_keys(
     user_context: UserContext,
-    item_in_storage_format,
+    item,
     flat_item,
     restrictions_schema,
     crud,
@@ -207,19 +206,17 @@ def __is_allowed_to_crud_item_keys(
                 for info in keys_info:
                     if info["object_list"]:
                         element = __get_element_from_object_list_of_item(
-                            item_in_storage_format,
+                            item,
                             info["key"],
                             info["object_key"],
                             object_lists,
                         )
                         if element:
-                            item_in_storage_format[info["key"]].remove(element)
+                            item[info["key"]].remove(element)
                         break
                 else:
                     try:
-                        del item_in_storage_format[keys_info[0]["key"]][
-                            keys_info[1]["key"]
-                        ]
+                        del item[keys_info[0]["key"]][keys_info[1]["key"]]
                     except KeyError:
                         pass
                 if key_to_check and key_to_check == restricted_key:
@@ -228,7 +225,7 @@ def __is_allowed_to_crud_item_keys(
                 if flat_request_body.get(restricted_key):
                     user_context.bag["restricted_keys"].append(restricted_key)
 
-    user_context.bag["requested_item"] = item_in_storage_format
+    user_context.bag["requested_item"] = item
     return len(user_context.bag["restricted_keys"]) == 0
 
 

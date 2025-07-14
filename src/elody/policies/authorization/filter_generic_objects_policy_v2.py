@@ -14,6 +14,7 @@ from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignor
 from inuits_policy_based_auth.contexts.user_context import (  # pyright: ignore
     UserContext,
 )
+from werkzeug.exceptions import BadRequest
 
 
 class FilterGenericObjectsPolicyV2(BaseAuthorizationPolicy):
@@ -27,11 +28,8 @@ class FilterGenericObjectsPolicyV2(BaseAuthorizationPolicy):
         if not isinstance(user_context.access_restrictions.filters, list):
             user_context.access_restrictions.filters = []
         type_filter, filters = self.__split_type_filter(
-            user_context, deepcopy(g.get("content") or request.json or [])
+            deepcopy(g.get("content") or request.json or [])
         )
-        if not type_filter:
-            policy_context.access_verdict = True
-            return policy_context
 
         policy_context.access_verdict = False
         for role in user_context.x_tenant.roles:
@@ -59,13 +57,15 @@ class FilterGenericObjectsPolicyV2(BaseAuthorizationPolicy):
 
         return policy_context
 
-    def __split_type_filter(self, user_context: UserContext, request_body: list):
+    def __split_type_filter(self, request_body: list):
         type_filter = None
         for filter in request_body:
             if filter["type"] == "type":
                 type_filter = filter
+                break
             elif filter["type"] == "selection" and filter["key"] == "type":
                 type_filter = filter
+                break
             elif item_types := filter.get("item_types"):
                 type_filter = {
                     "type": "selection",
@@ -73,22 +73,12 @@ class FilterGenericObjectsPolicyV2(BaseAuthorizationPolicy):
                     "value": item_types,
                     "match_exact": True,
                 }
+                break
 
         if not type_filter:
-            if tenant_relation_type := user_context.bag.get("tenant_relation_type"):
-                user_context.access_restrictions.filters.append(  # pyright: ignore
-                    {
-                        "type": "selection",
-                        "key": tenant_relation_type,
-                        "value": [
-                            user_context.bag.get(
-                                "tenant_defining_entity_id", user_context.x_tenant.id
-                            )
-                        ],
-                        "match_exact": True,
-                    }
-                )
-            return None, request_body
+            raise BadRequest(
+                "Filter with type 'type', or a filter with type 'selection' and 'key' equal to 'type' is required"
+            )
 
         try:
             request_body.remove(type_filter)
