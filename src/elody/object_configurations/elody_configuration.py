@@ -60,7 +60,14 @@ class ElodyConfiguration(BaseObjectConfiguration):
         template = {
             "_id": _id,
             "identifiers": list(
-                set([_id, *identifiers, *document_defaults.pop("identifiers", [])])
+                set(
+                    [
+                        _id,
+                        *identifiers,
+                        *document_defaults.pop("identifiers", []),
+                        *post_body.pop("identifiers", []),
+                    ]
+                )
             ),
             "metadata": [],
             "relations": [],
