@@ -52,7 +52,9 @@ class ElodyConfiguration(BaseObjectConfiguration):
         _id = document_defaults.get("_id", str(uuid4()))
         timestamp = datetime.now(timezone.utc)
 
-        identifiers = []
+        identifiers = (
+            post_body.pop("identifiers", []) if isinstance(post_body, dict) else []
+        )
         for property in self.document_info().get("identifier_properties", []):
             if identifier := flat_post_body.get(f"metadata.{property}.value"):
                 identifiers.append(identifier)
@@ -65,7 +67,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
                         _id,
                         *identifiers,
                         *document_defaults.pop("identifiers", []),
-                        *post_body.pop("identifiers", []),
                     ]
                 )
             ),
