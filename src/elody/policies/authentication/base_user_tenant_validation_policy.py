@@ -23,10 +23,10 @@ class BaseUserTenantValidationPolicy(ABC):
     ) -> dict:
         config = get_object_configuration_mapper().get("user")
         collection = config.crud()["collection"]
-        serialize = config.serialization(config.SCHEMA_TYPE, "elody")
+        self.serialize = config.serialization(config.SCHEMA_TYPE, "elody")
 
         user = storage.get_item_from_collection_by_id(collection, id) or {}
-        self.user = serialize(user)
+        self.user = self.serialize(user)
         user_context.bag["roles_from_idp"] = deepcopy(user_context.x_tenant.roles)
         user_context.bag["user_metadata_key_for_global_roles"] = (
             user_metadata_key_for_global_roles
@@ -50,6 +50,7 @@ class BaseUserTenantValidationPolicy(ABC):
     def build_user_context_for_authenticated_user(
         self, request, user_context: UserContext, user: dict
     ) -> UserContext:
+        self.user = self.serialize(user)
         user_context = self.__build_user_context(request, user_context)
         user_context.x_tenant = Tenant()
         user_context.x_tenant.id = self._determine_tenant_id(request, user_context)
