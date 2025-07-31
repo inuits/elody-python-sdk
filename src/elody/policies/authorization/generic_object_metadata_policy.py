@@ -5,7 +5,7 @@ from elody.policies.permission_handler import (
     get_permissions,
     handle_single_item_request,
 )
-from flask import Request  # pyright: ignore
+from flask import g, Request  # pyright: ignore
 from inuits_policy_based_auth import BaseAuthorizationPolicy  # pyright: ignore
 from inuits_policy_based_auth.contexts.policy_context import (  # pyright: ignore
     PolicyContext,
@@ -62,7 +62,8 @@ class PutRequestRules:
         if request.method != "PUT":
             return None
 
-        content = get_content(item, request, {"metadata": request.json})
+        content = g.get("content") or request.json
+        content = get_content(item, request, {"metadata": content})
         return handle_single_item_request(
             user_context, item, permissions, "update", content
         )
@@ -75,7 +76,8 @@ class PatchRequestRules:
         if request.method != "PATCH":
             return None
 
-        content = get_content(item, request, {"metadata": request.json})
+        content = g.get("content") or request.json
+        content = get_content(item, request, {"metadata": content})
         return handle_single_item_request(
             user_context, item, permissions, "update", content
         )
