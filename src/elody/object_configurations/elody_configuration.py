@@ -107,6 +107,16 @@ class ElodyConfiguration(BaseObjectConfiguration):
                                 ):
                                     document[key].remove(item_element)
                                     break
+                    else:
+                        for value_element in value:
+                            for item_element in document[key]:
+                                if (
+                                    item_element[object_lists[key]]
+                                    == value_element[object_lists[key]]
+                                    and item_element["key"] == value_element["key"]
+                                ):
+                                    document[key].remove(item_element)
+                                    break
                     if not document.get(key):
                         document[key] = []
                     document[key].extend(value)
