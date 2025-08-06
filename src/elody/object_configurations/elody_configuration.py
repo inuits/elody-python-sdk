@@ -196,7 +196,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                                             }
                                         },
                                         "as": "metadata",
-                                        "in": "$$metadata.value",
+                                        "in": { "$toLower": "$$metadata.value" },
                                     }
                                 },
                                 0,
