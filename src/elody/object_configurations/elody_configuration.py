@@ -179,7 +179,45 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def _sorting(self, key_order_map, **_):
         addFields, sort = {}, {}
         for key, order in key_order_map.items():
-            if key not in ["date_created", "date_updated", "last_editor"]:
+            if key == "order":
+                addFields.update(
+                    {
+                        key: {
+                            "$arrayElemAt": [
+                                {
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$relations",
+                                                "as": "relation",
+                                                "cond": {
+                                                    "$eq": [
+                                                        {
+                                                            "$arrayElemAt": [
+                                                                "$$relation.metadata.key",
+                                                                0,
+                                                            ]
+                                                        },
+                                                        key,
+                                                    ]
+                                                },
+                                            }
+                                        },
+                                        "as": "relation",
+                                        "in": {
+                                            "$arrayElemAt": [
+                                                "$$relation.metadata.value",
+                                                0,
+                                            ]
+                                        },
+                                    }
+                                },
+                                0,
+                            ]
+                        }
+                    }
+                )
+            elif key not in ["date_created", "date_updated", "last_editor"]:
                 addFields.update(
                     {
                         key: {
