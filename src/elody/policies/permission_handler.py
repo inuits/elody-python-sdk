@@ -260,7 +260,11 @@ def __item_value_in_values(
         if key_of_relation:
             if isinstance(item_value, list):
                 item_value = item_value[0]
-            item = get_item(StorageManager(), user_context.bag, {"id": item_value})
+            item = get_item(
+                StorageManager(),
+                user_context.bag,
+                {"type": keys[1].split("-", 1)[0], "id": item_value},
+            )
             flat_item, _ = get_flat_item_and_object_lists(item)
             return __item_value_in_values(
                 flat_item, key_of_relation, values, flat_request_body, user_context

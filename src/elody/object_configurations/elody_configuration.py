@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime, timezone
 from elody.object_configurations.base_object_configuration import (
     BaseObjectConfiguration,
@@ -158,6 +159,9 @@ class ElodyConfiguration(BaseObjectConfiguration):
                 lines = value.splitlines()
                 value = "\n".join(line.strip() for line in lines).strip()
                 element[object_list_value_field_name] = value.strip()
+            for key, value in deepcopy(element).items():
+                if not value:
+                    del element[key]
         return sanitized_document
 
     def __patch_document_audit_info(self, crud, document, timestamp):

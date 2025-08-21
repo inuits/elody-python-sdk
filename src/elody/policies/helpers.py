@@ -44,7 +44,15 @@ def get_item(storage_manager, user_context_bag, view_args) -> dict:
     view_args = view_args or {}
     if id := view_args.get("id"):
         resolve_collections = user_context_bag.get("collection_resolver")
-        collections = resolve_collections(collection=view_args.get("collection"), id=id)
+        collection = (
+            get_object_configuration_mapper()
+            .get(view_args.get("type"))
+            .crud()
+            .get("collection")
+        )
+        collections = resolve_collections(
+            collection=view_args.get("collection", collection), id=id
+        )
         for collection in collections:
             if item := storage_manager.get_db_engine().get_item_from_collection_by_id(
                 collection, id
