@@ -36,6 +36,10 @@ class BaseUserTenantValidationPolicy(ABC):
         return self.user
 
     @abstractmethod
+    def promote_role(self, user_context: UserContext):
+        pass
+
+    @abstractmethod
     def build_user_context_for_anonymous_user(
         self, request, user_context: UserContext
     ) -> UserContext:
@@ -86,30 +90,37 @@ class BaseUserTenantValidationPolicy(ABC):
         """
 
         roles = []
-        for metadata in self.user.get("metadata", []):
-            if (
-                metadata["key"]
-                == user_context.bag["user_metadata_key_for_global_roles"]
+        try:
+            for metadata in self.user.get("metadata", []):
+                if (
+                    metadata["key"]
+                    == user_context.bag["user_metadata_key_for_global_roles"]
+                ):
+                    roles.extend(metadata["value"])
+
+            if user_context.x_tenant.id:
+                tenant_ids = user_context.x_tenant.id.split(",")
+                for tenant_id in tenant_ids:
+                    try:
+                        user_tenant_relation = self.__get_user_tenant_relation(
+                            tenant_id, user_context.bag["user_tenant_relation_type"]
+                        )
+                    except Forbidden as error:
+                        user_tenant_relation = {}
+                        if len(roles) == 0:
+                            raise Forbidden(error.description)
+                    roles.extend(user_tenant_relation.get("roles", []))
+
+            if len(roles) == 0 and not regex.match(
+                "(/[^/]+/v[0-9]+)?/tenants$", request.path
             ):
-                roles.extend(metadata["value"])
-
-        if user_context.x_tenant.id:
-            tenant_ids = user_context.x_tenant.id.split(",")
-            for tenant_id in tenant_ids:
-                try:
-                    user_tenant_relation = self.__get_user_tenant_relation(
-                        tenant_id, user_context.bag["user_tenant_relation_type"]
-                    )
-                except Forbidden as error:
-                    user_tenant_relation = {}
-                    if len(roles) == 0:
-                        raise Forbidden(error.description)
-                roles.extend(user_tenant_relation.get("roles", []))
-
-        if len(roles) == 0 and not regex.match(
-            "(/[^/]+/v[0-9]+)?/tenants$", request.path
-        ):
-            raise Forbidden("User has no global roles, switch to a specific tenant.")
+                raise Forbidden(
+                    "User has no global roles, switch to a specific tenant."
+                )
+        except Forbidden as exception:
+            if not (promoted_role := self.promote_role(user_context)):
+                raise exception
+            roles.append(promoted_role)
 
         return list(set(roles))
 

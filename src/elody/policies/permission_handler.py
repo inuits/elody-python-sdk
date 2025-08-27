@@ -222,7 +222,7 @@ def __is_allowed_to_crud_item_keys(
                 if key_to_check and key_to_check == restricted_key:
                     user_context.bag["restricted_keys"].append(restricted_key)
             else:
-                if flat_request_body.get(restricted_key):
+                if flat_request_body.get(restricted_key) is not None:
                     user_context.bag["restricted_keys"].append(restricted_key)
 
     user_context.bag["requested_item"] = item
