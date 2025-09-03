@@ -42,20 +42,6 @@ class JobConfiguration(ElodyConfiguration):
                 "dams.job_created",
                 document,
             )
-            if parent_id := kwargs.get("parent_id"):
-                send_cloudevent(
-                    get_rabbit(),
-                    getenv("MQ_EXCHANGE", "dams"),
-                    "dams.job_changed",
-                    {
-                        "id": parent_id,
-                        "patch": {
-                            "relations": [
-                                {"key": document["_id"], "type": "isParentJobOf"}
-                            ]
-                        },
-                    },
-                )
         elif crud == "update":
             send_cloudevent(
                 get_rabbit(),
