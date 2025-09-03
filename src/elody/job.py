@@ -67,7 +67,6 @@ def init_job(
 def start_job(
     id,
     id_of_document_job_was_initiated_for=None,
-    type_of_document_job_was_initiated_for=None,
     *,
     get_rabbit,
 ):
@@ -85,7 +84,6 @@ def start_job(
 def finish_job(
     id,
     id_of_document_job_was_initiated_for=None,
-    type_of_document_job_was_initiated_for=None,
     *,
     get_rabbit,
 ):
