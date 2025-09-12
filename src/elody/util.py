@@ -125,6 +125,13 @@ def get_item_metadata_value(item, key):
     return ""
 
 
+def get_item_relation_key(item, type):
+    for item in item.get("relations", []):
+        if item["type"] == type:
+            return item["key"]
+    return ""
+
+
 def get_mimetype_from_filename(filename):
     mime = mimetypes.guess_type(filename, False)[0]
     return mime if mime else "application/octet-stream"
@@ -267,8 +274,12 @@ def signal_update_copyright_color_mediafile(mq_client, mediafile_id):
     send_cloudevent(mq_client, "dams", "dams.update_copyright_color_mediafile", data)
 
 
-def signal_upload_file(mq_client, upload_links, selected_folder):
-    data = {"upload_links": upload_links, "selected_folder": selected_folder}
+def signal_upload_file(mq_client, upload_links, selected_folder, parent_job_id=None):
+    data = {
+        "upload_links": upload_links,
+        "selected_folder": selected_folder,
+        "parent_job_id": parent_job_id,
+    }
     send_cloudevent(mq_client, "dams", "dams.upload_file", data)
 
 
