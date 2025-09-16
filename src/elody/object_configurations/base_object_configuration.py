@@ -10,6 +10,7 @@ class BaseObjectConfiguration(ABC):
     @abstractmethod
     def crud(self):
         return {
+            "creation_preparer": lambda post_body, **kwargs: post_body,
             "creator": lambda post_body, **kwargs: post_body,
             "document_content_patcher": lambda *, document, content, overwrite=False, **kwargs: self._document_content_patcher(
                 document=document,
