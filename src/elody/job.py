@@ -1,6 +1,11 @@
-from elody.object_configurations.job_configuration import JobConfiguration
+try:
+    from config import get_object_configuration_mapper
 
-_config = JobConfiguration()
+    _config = get_object_configuration_mapper().get("job")
+except ModuleNotFoundError:
+    from elody.object_configurations.job_configuration import JobConfiguration
+
+    _config = JobConfiguration()
 
 
 def add_document_to_job(
