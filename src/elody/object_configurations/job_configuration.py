@@ -1,11 +1,12 @@
+from datetime import datetime, timezone
+from enum import Enum
+from os import getenv
+from typing import Literal
+
 from elody.object_configurations.elody_configuration import (
     ElodyConfiguration,
 )
 from elody.util import send_cloudevent
-from os import getenv
-from typing import Literal
-from datetime import datetime, timezone
-from enum import Enum
 
 
 class Status(str, Enum):
@@ -164,7 +165,6 @@ class JobConfiguration(ElodyConfiguration):
             "patch": {
                 "started_at": datetime.now(timezone.utc),
                 "metadata": [{"key": "status", "value": Status.RUNNING.value}],
-                "relations": ([] if id_of_document_job_was_initiated_for else []),
             },
         }
         self._post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
@@ -172,7 +172,6 @@ class JobConfiguration(ElodyConfiguration):
     def _finish_job(
         self,
         id,
-        id_of_document_job_was_initiated_for=None,
         *,
         get_rabbit,
     ):
@@ -180,7 +179,6 @@ class JobConfiguration(ElodyConfiguration):
             "id": id,
             "patch": {
                 "metadata": [{"key": "status", "value": Status.FINISHED.value}],
-                "relations": ([] if id_of_document_job_was_initiated_for else []),
             },
         }
         self._post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
@@ -188,7 +186,6 @@ class JobConfiguration(ElodyConfiguration):
     def _finish_job_with_warning(
         self,
         id,
-        id_of_document_job_was_initiated_for=None,
         *,
         get_rabbit,
         info_message=None,
@@ -200,7 +197,6 @@ class JobConfiguration(ElodyConfiguration):
                     {"key": "status", "value": Status.FINISHED.value},
                     {"key": "info", "value": info_message},
                 ],
-                "relations": ([] if id_of_document_job_was_initiated_for else []),
             },
         }
         self._post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
