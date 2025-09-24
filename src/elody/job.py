@@ -46,26 +46,22 @@ def init_job(
 
 def start_job(
     id,
-    id_of_document_job_was_initiated_for=None,
     *,
     get_rabbit,
 ):
     _config.crud()["start_job"](
         id=id,
-        id_of_document_job_was_initiated_for=id_of_document_job_was_initiated_for,
         get_rabbit=get_rabbit,
     )
 
 
 def finish_job(
     id,
-    id_of_document_job_was_initiated_for=None,
     *,
     get_rabbit,
 ):
     _config.crud()["finish_job"](
         id=id,
-        id_of_document_job_was_initiated_for=id_of_document_job_was_initiated_for,
         get_rabbit=get_rabbit,
     )
 

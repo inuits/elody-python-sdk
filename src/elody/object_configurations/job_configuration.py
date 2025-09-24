@@ -156,7 +156,6 @@ class JobConfiguration(ElodyConfiguration):
     def _start_job(
         self,
         id,
-        id_of_document_job_was_initiated_for=None,
         *,
         get_rabbit,
     ):
