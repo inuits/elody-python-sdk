@@ -18,6 +18,7 @@ class BaseObjectConfiguration(ABC):
                 overwrite=overwrite,
                 **kwargs,
             ),
+            "document_exception_message_constructor": lambda exception, fallback_message: fallback_message,
             "nested_matcher_builder": lambda object_lists, keys_info, value, **kwargs: self.__build_nested_matcher(
                 object_lists, keys_info, value, **kwargs
             ),
