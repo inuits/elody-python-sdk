@@ -88,7 +88,15 @@ class ElodyConfiguration(BaseObjectConfiguration):
         else:
             document = {**template, **document_defaults}
         document = self._pre_crud_hook(
-            crud="create", timestamp=timestamp, document=document
+            crud="create",
+            timestamp=timestamp,
+            document=document,
+            audit_override={
+                "date_created": document_defaults.get("date_created"),
+                "created_by": document_defaults.get("created_by"),
+                "date_updated": document_defaults.get("date_updated"),
+                "last_editor": document_defaults.get("last_editor"),
+            },
         )
         return document
 
@@ -129,10 +137,14 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def _post_crud_hook(self, **kwargs):
         pass
 
-    def _pre_crud_hook(self, *, crud, timestamp, document={}, **kwargs):
+    def _pre_crud_hook(
+        self, *, crud, timestamp, document={}, audit_override={}, **kwargs
+    ):
         if document:
             document = self.__patch_document_unique_value(document)
-            document = self.__patch_document_audit_info(crud, document, timestamp)
+            document = self.__patch_document_audit_info(
+                crud, document, timestamp, audit_override
+            )
             document = self._sanitize_document(
                 document=document,
                 object_list_name="metadata",
@@ -164,11 +176,12 @@ class ElodyConfiguration(BaseObjectConfiguration):
                     del element[key]
         return sanitized_document
 
-    def __patch_document_audit_info(self, crud, document, timestamp):
+    def __patch_document_audit_info(self, crud, document, timestamp, audit_override):
         document.update({f"date_{crud}d": timestamp})
         if email := self._get_user_context_id():
             label = f"{crud}d_by" if crud == "create" else "last_editor"
             document.update({label: email})
+        document.update({key: value for key, value in audit_override.items() if value})
         return document
 
     def __patch_document_unique_value(self, document):
