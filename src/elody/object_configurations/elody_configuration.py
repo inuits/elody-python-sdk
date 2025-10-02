@@ -177,6 +177,9 @@ class ElodyConfiguration(BaseObjectConfiguration):
         return sanitized_document
 
     def __patch_document_audit_info(self, crud, document, timestamp, audit_override):
+        if self._is_request_from_internal_service():
+            return document
+
         document.update({f"date_{crud}d": timestamp})
         if email := self._get_user_context_id():
             label = f"{crud}d_by" if crud == "create" else "last_editor"

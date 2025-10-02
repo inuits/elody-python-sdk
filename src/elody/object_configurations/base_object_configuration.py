@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from elody.migration.base_object_migrator import BaseObjectMigrator
+from os import getenv
 
 
 class BaseObjectConfiguration(ABC):
@@ -94,6 +95,16 @@ class BaseObjectConfiguration(ABC):
             return get_user_context().id
         except Exception:
             return None
+
+    def _is_request_from_internal_service(self):
+        try:
+            from flask import request  # pyright: ignore
+
+            return request.headers.get("Authorization", "").removeprefix(
+                "Bearer "
+            ) == getenv("STATIC_JWT")
+        except Exception:
+            return False
 
     def _sanitize_document(self, *, document, **kwargs):
         sanitized_document = {}
