@@ -51,7 +51,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
             post_body if isinstance(post_body, dict) else {},
         )
         _id = document_defaults.get("_id", str(uuid4()))
-        timestamp = datetime.now(timezone.utc)
 
         identifiers = (
             post_body.pop("identifiers", []) if isinstance(post_body, dict) else []
@@ -87,17 +86,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
             document = {**template, **document_defaults, **post_body}
         else:
             document = {**template, **document_defaults}
-        document = self._pre_crud_hook(
-            crud="create",
-            timestamp=timestamp,
-            document=document,
-            audit_override={
-                "date_created": document_defaults.get("date_created"),
-                "created_by": document_defaults.get("created_by"),
-                "date_updated": document_defaults.get("date_updated"),
-                "last_editor": document_defaults.get("last_editor"),
-            },
-        )
         return document
 
     def _document_content_patcher(self, *, document, content, overwrite=False, **_):
