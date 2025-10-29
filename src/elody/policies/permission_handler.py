@@ -4,9 +4,11 @@ from copy import deepcopy
 from elody.error_codes import ErrorCode, get_error_code, get_read
 from elody.policies.helpers import get_flat_item_and_object_lists, get_item
 from elody.util import flatten_dict, interpret_flat_key
+from flask import g
 from inuits_policy_based_auth.contexts.user_context import UserContext
 from logging_elody.log import log  # pyright: ignore
 from storage.storagemanager import StorageManager  # pyright: ignore
+from werkzeug.exceptions import NotFound
 
 
 _permissions = {}
@@ -260,11 +262,16 @@ def __item_value_in_values(
         if key_of_relation:
             if isinstance(item_value, list):
                 item_value = item_value[0]
-            item = get_item(
-                StorageManager(),
-                user_context.bag,
-                {"type": keys[1].split("-", 1)[0], "id": item_value},
-            )
+            try:
+                item = get_item(
+                    StorageManager(),
+                    user_context.bag,
+                    {"type": keys[1].split("-", 1)[0], "id": item_value},
+                )
+            except NotFound as exception:
+                if g.get("dry_run") or is_optional:
+                    return True
+                raise exception
             flat_item, _ = get_flat_item_and_object_lists(item)
             return __item_value_in_values(
                 flat_item, key_of_relation, values, flat_request_body, user_context

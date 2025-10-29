@@ -9,18 +9,18 @@ def generate_filter_key_and_lookup_from_restricted_key(key):
     if (keys := key.split("@", 1)) and len(keys) == 1:
         return key, {}
 
-    local_field = keys[0]
     document_type, key = keys[1].split("-", 1)
     collection = (
         get_object_configuration_mapper().get(document_type).crud()["collection"]
     )
+    local_field, lookup_prefix = parse_optional_filter_key(keys[0])
     lookup = {
         "from": collection,
         "local_field": local_field,
         "foreign_field": "identifiers",
         "as": f"__lookup.virtual_relations.{document_type}",
     }
-    return f"{lookup['as']}.{key}", lookup
+    return f"{lookup_prefix}{lookup['as']}.{key}", lookup
 
 
 def get_content(item, request, content):
@@ -62,3 +62,14 @@ def get_item(storage_manager, user_context_bag, view_args) -> dict:
     raise NotFound(
         f"{get_error_code(ErrorCode.ITEM_NOT_FOUND, get_read())} | id:{id} - Item with id {id} does not exist."
     )
+
+
+def parse_optional_filter_key(key):
+    prefix = ""
+    if key[0] == "!":
+        key = key[1:]
+        prefix += "!"
+    if key[0] == "?":
+        key = key[1:]
+        prefix += "?"
+    return key, prefix
