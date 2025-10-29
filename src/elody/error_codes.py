@@ -76,6 +76,7 @@ class ErrorCode(Enum):
     INVALID_VALUE = ("5016", ["value", "options", "line_number"])
     ITEM_WITH_VALUE_FOR_KEY_NOT_FOUND = ("5017", ["key", "value", "line_number"])
     ITEM_WITH_VALUE_FOR_KEY_NOT_UNIQUE = ("5018", ["key", "value", "line_number"])
+    DUPLICATE_ENTRY_LINKED_ENTITIES = ("W5018", ["entity_type", "duplicate_entry"])
 
     # Filter error codes
     NO_MATCHER_FOR_FILTER_REQUEST = ("6001", [])
