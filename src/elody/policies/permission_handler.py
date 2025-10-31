@@ -2,7 +2,11 @@ import re as regex
 
 from copy import deepcopy
 from elody.error_codes import ErrorCode, get_error_code, get_read
-from elody.policies.helpers import get_flat_item_and_object_lists, get_item
+from elody.policies.helpers import (
+    generate_filter_key_and_lookup_from_restricted_key,
+    get_flat_item_and_object_lists,
+    get_item,
+)
 from elody.util import flatten_dict, interpret_flat_key
 from flask import g
 from inuits_policy_based_auth.contexts.user_context import UserContext
@@ -49,6 +53,109 @@ def __replace_permission_placeholders(data, placeholder_key, placeholder_value):
         elif isinstance(placeholder_value, list) and data == placeholder_key:
             data = placeholder_value
     return data
+
+
+def handle_item_overview_request(schemas, filters):
+    restrictions_grouped_by_index = __group_restrictions_by_index(schemas)
+    short_circuit = __short_circuit_item_overview_soft_call(
+        filters, restrictions_grouped_by_index
+    )
+    if short_circuit is not None:
+        return short_circuit
+    return __generate_restriction_filters(restrictions_grouped_by_index)
+
+
+def __group_restrictions_by_index(schemas):
+    restrictions_grouped_by_index = {}
+    for schema in schemas.keys():
+        restrictions = schemas[schema].get("object_restrictions", {})
+        for restricted_key, restricting_value in restrictions.items():
+            index, restricted_key = restricted_key.split(":")
+            restricted_key, lookup = generate_filter_key_and_lookup_from_restricted_key(
+                restricted_key
+            )
+            key = f"{schema}|{restricted_key}"
+            if group := restrictions_grouped_by_index.get(index):
+                group["key"].append(key)
+            else:
+                restrictions_grouped_by_index.update(
+                    {
+                        index: {
+                            "lookup": lookup,
+                            "key": [key],
+                            "value": restricting_value,
+                        }
+                    }
+                )
+    return restrictions_grouped_by_index
+
+
+def __short_circuit_item_overview_soft_call(filters, restrictions_grouped_by_index):
+    for filter in filters:
+        key = filter.get("key", "")
+        if isinstance(key, list):
+            key = ",".join(key)
+        for restriction in restrictions_grouped_by_index.values():
+            if key not in ",".join(restriction["key"]):
+                continue
+            values = (
+                filter["value"]
+                if isinstance(filter["value"], list)
+                else [filter["value"]]
+            )
+            for value in values:
+                if value not in restriction["value"] and value not in ["", "*"]:
+                    return False
+    return None
+
+
+def __generate_restriction_filters(restrictions_grouped_by_index):
+    filters = []
+    for restriction in restrictions_grouped_by_index.values():
+        try:
+            combined_restrictions = [
+                value for value in restriction["value"] if isinstance(value, list)
+            ][0]
+        except IndexError:
+            combined_restrictions = []
+
+        filter = {
+            "lookup": restriction["lookup"],
+            "type": "selection",
+            "key": restriction["key"],
+            "value": [
+                value for value in restriction["value"] if not isinstance(value, list)
+            ],
+            "match_exact": True,
+            "or": [],
+        }
+
+        for combined_restriction in combined_restrictions:
+            combination = []
+            for value, combinations in combined_restriction.items():
+                combination.append(
+                    {
+                        "type": "selection",
+                        "key": restriction["key"],
+                        "value": [value],
+                        "match_exact": True,
+                    }
+                )
+                for key, value in combinations.items():
+                    key = [f"{restriction['key'][0].split('|')[0]}|{key}"]
+                    combination.append(
+                        {
+                            "lookup": restriction["lookup"],
+                            "type": "selection",
+                            "key": key,
+                            "value": value,
+                            "match_exact": True,
+                        }
+                    )
+            filter["or"].append(combination)
+
+        filters.append(filter)
+    return filters
 
 
 def handle_single_item_request(
@@ -234,20 +341,24 @@ def __is_allowed_to_crud_item_keys(
 def __item_value_in_values(
     flat_item, key, values: list, flat_request_body, user_context: UserContext
 ):
+    if __matches_combined_expected_values(
+        flat_item, key, values, flat_request_body, user_context
+    ):
+        return True
+
     negate_condition = False
     is_optional = False
-
+    key_of_relation = None
     if key[0] == "!":
         key = key[1:]
         negate_condition = True
     if key[0] == "?":
         key = key[1:]
         is_optional = True
-
-    key_of_relation = None
     if (keys := key.split("@", 1)) and len(keys) == 2:
         key = keys[0]
         key_of_relation = keys[1].split("-", 1)[1]
+
     try:
         item_value = flat_request_body.get(key, flat_item[key])
         if is_optional:
@@ -277,6 +388,34 @@ def __item_value_in_values(
                 flat_item, key_of_relation, values, flat_request_body, user_context
             )
 
+    return __matches_expected_values(flat_item, item_value, values, negate_condition)
+
+
+def __matches_combined_expected_values(
+    flat_item, key, values, flat_request_body, user_context
+):
+    values_deepcopy = deepcopy(values)
+    for value_from_values in values_deepcopy:
+        if not isinstance(value_from_values, list):
+            continue
+        for combined_restriction in value_from_values:
+            for value, combinations in combined_restriction.items():
+                if __item_value_in_values(
+                    flat_item, key, [value], flat_request_body, user_context
+                ):
+                    for combination_key, value in combinations.items():
+                        if __item_value_in_values(
+                            flat_item,
+                            combination_key,
+                            value,
+                            flat_request_body,
+                            user_context,
+                        ):
+                            return True
+        values.remove(value_from_values)
+
+
+def __matches_expected_values(flat_item, item_value, values, negate_condition):
     expected_values = []
     for value in values:
         if flat_item_key_value := flat_item.get(value):

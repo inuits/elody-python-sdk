@@ -1,9 +1,9 @@
 import re as regex
 
 from copy import deepcopy
-from elody.policies.helpers import generate_filter_key_and_lookup_from_restricted_key
 from elody.policies.permission_handler import (
     get_permissions,
+    handle_item_overview_request,
     mask_protected_content_post_request_hook,
 )
 from flask import g, Request  # pyright: ignore
@@ -108,58 +108,11 @@ class PostRequestRules:
                 type_filter_values.remove(type_filter_value)
                 continue
 
-            restrictions_grouped_by_index = {}
             schemas = permissions["read"][type_filter_value]
-            for schema in schemas.keys():
-                restrictions = schemas[schema].get("object_restrictions", {})
-                for restricted_key, restricting_value in restrictions.items():
-                    index, restricted_key = restricted_key.split(":")
-                    restricted_key, lookup = (
-                        generate_filter_key_and_lookup_from_restricted_key(
-                            restricted_key
-                        )
-                    )
-                    key = f"{schema}|{restricted_key}"
-                    if group := restrictions_grouped_by_index.get(index):
-                        group["key"].append(key)
-                    else:
-                        restrictions_grouped_by_index.update(
-                            {
-                                index: {
-                                    "lookup": lookup,
-                                    "key": [key],
-                                    "value": restricting_value,
-                                }
-                            }
-                        )
-
-            # support false soft call read responses
-            for filter in filters:
-                key = filter.get("key", "")
-                if isinstance(key, list):
-                    key = ",".join(key)
-                for restriction in restrictions_grouped_by_index.values():
-                    if key not in ",".join(restriction["key"]):
-                        continue
-                    values = (
-                        filter["value"]
-                        if isinstance(filter["value"], list)
-                        else [filter["value"]]
-                    )
-                    for value in values:
-                        if value not in restriction["value"] and value not in ["", "*"]:
-                            return False
-
-            for restriction in restrictions_grouped_by_index.values():
-                user_context.access_restrictions.filters.append(  # pyright: ignore
-                    {
-                        "lookup": restriction["lookup"],
-                        "type": "selection",
-                        "key": restriction["key"],
-                        "value": restriction["value"],
-                        "match_exact": True,
-                    }
-                )
+            result = handle_item_overview_request(schemas, filters)
+            if not isinstance(result, list):
+                return result
+            user_context.access_restrictions.filters.extend(result)  # pyright: ignore
 
         if len(type_filter_values) == 0:
             return False
