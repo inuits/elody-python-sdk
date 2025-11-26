@@ -193,7 +193,7 @@ class JobConfiguration(ElodyConfiguration):
             "id": id,
             "patch": {
                 "metadata": [
-                    {"key": "status", "value": Status.FINISHED.value},
+                    {"key": "status", "value": Status.WARNING.value},
                     {"key": "info", "value": info_message},
                 ],
             },

@@ -66,6 +66,12 @@ def finish_job(
     )
 
 
+def finish_job_with_warning(id, *, get_rabbit, info_message=None):
+    _config.crud()["finish_job_with_warning"](
+        id=id, get_rabbit=get_rabbit, info_message=info_message
+    )
+
+
 def soft_finish_job(
     id,
     *,
