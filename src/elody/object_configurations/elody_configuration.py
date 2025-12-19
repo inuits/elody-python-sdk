@@ -72,7 +72,6 @@ class ElodyConfiguration(BaseObjectConfiguration):
             ),
             "metadata": [],
             "relations": [],
-            "type": self.SCHEMA_TYPE,
             "schema": {"type": self.SCHEMA_TYPE, "version": self.SCHEMA_VERSION},
         }
 
