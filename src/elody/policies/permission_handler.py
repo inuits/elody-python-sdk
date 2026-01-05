@@ -296,7 +296,9 @@ def __is_allowed_to_crud_item_keys(
     restrictions = restrictions_schema.get("key_restrictions", {})
 
     for restricted_key, restricting_conditions in restrictions.items():
-        restricted_key = restricted_key.split(":")[1]
+        restricted_key = (
+            restricted_key.split(":")[1].removeprefix("!").removeprefix("?")
+        )
         condition_match = True
         for condition_key, condition_values in restricting_conditions.items():
             condition_match = __item_value_in_values(
@@ -331,7 +333,8 @@ def __is_allowed_to_crud_item_keys(
                 if key_to_check and key_to_check == restricted_key:
                     user_context.bag["restricted_keys"].append(restricted_key)
             else:
-                if flat_request_body.get(restricted_key) is not None:
+                value = flat_request_body.get(restricted_key)
+                if value is not None and value != flat_item.get(restricted_key):
                     user_context.bag["restricted_keys"].append(restricted_key)
 
     user_context.bag["requested_item"] = item
