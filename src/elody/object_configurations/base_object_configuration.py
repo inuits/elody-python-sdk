@@ -172,7 +172,7 @@ class BaseObjectConfiguration(ABC):
     ):
         if index == 0 and not any(info["object_list"] for info in keys_info):
             if value in ["ANY_MATCH", "NONE_MATCH"]:
-                value = {"$exists": value == "ANY_MATCH"}
+                value = {"$nin" if value == "ANY_MATCH" else "$in": [None, ""]}
             matcher = {".".join(info["key"] for info in keys_info): value}
             if inner_exact_matches := kwargs.get("inner_exact_matches"):
                 matcher.update(inner_exact_matches)
@@ -189,16 +189,11 @@ class BaseObjectConfiguration(ABC):
                     ),
                 }
             }
-            if value in ["ANY_MATCH", "NONE_MATCH"]:
-                elem_match_with_exists_operator = deepcopy(elem_match)
-                del elem_match["$elemMatch"][keys_info[index + 1]["key"]]
-                if value == "NONE_MATCH":
-                    return {
-                        "NOR_MATCHER": [
-                            {info["key"]: {"$all": [elem_match]}},
-                            {info["key"]: {"$all": [elem_match_with_exists_operator]}},
-                        ]
-                    }
+            if value == "NONE_MATCH":
+                elem_match["$elemMatch"][keys_info[index + 1]["key"]] = {
+                    "$nin": [None, ""]
+                }
+                return {"NOR_MATCHER": [{info["key"]: {"$all": [elem_match]}}]}
             return elem_match if index > 0 else {info["key"]: {"$all": [elem_match]}}
 
         raise Exception(f"Unable to build nested matcher. See keys_info: {keys_info}")
