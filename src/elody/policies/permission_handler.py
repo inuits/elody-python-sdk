@@ -11,6 +11,7 @@ from elody.util import flatten_dict, interpret_flat_key
 from flask import g
 from inuits_policy_based_auth.contexts.user_context import UserContext
 from logging_elody.log import log  # pyright: ignore
+from os import getenv
 from storage.storagemanager import StorageManager  # pyright: ignore
 from werkzeug.exceptions import NotFound
 
@@ -128,6 +129,7 @@ def __generate_restriction_filters(restrictions_grouped_by_index):
             ],
             "match_exact": True,
             "or": [],
+            "policy_signature": getenv("STATIC_JWT"),
         }
 
         for combined_restriction in combined_restrictions:
@@ -139,6 +141,7 @@ def __generate_restriction_filters(restrictions_grouped_by_index):
                         "key": restriction["key"],
                         "value": [value],
                         "match_exact": True,
+                        "policy_signature": getenv("STATIC_JWT"),
                     }
                 )
                 for key, value in combinations.items():
@@ -150,6 +153,7 @@ def __generate_restriction_filters(restrictions_grouped_by_index):
                             "key": key,
                             "value": value,
                             "match_exact": True,
+                            "policy_signature": getenv("STATIC_JWT"),
                         }
                     )
             filter["or"].append(combination)
