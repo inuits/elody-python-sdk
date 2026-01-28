@@ -156,7 +156,7 @@ def __generate_restriction_filters(restrictions_grouped_by_index):
                             "policy_signature": getenv("STATIC_JWT"),
                         }
                     )
-            filter["or"].append(combination)
+            filter["or"].extend(combination)
 
         filters.append(filter)
     return filters
