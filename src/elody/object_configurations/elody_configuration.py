@@ -166,7 +166,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
 
     def __patch_document_audit_info(self, crud, document, timestamp, audit_override):
         if crud == "update":
-            document["document_version"] = document["document_version"] + 1
+            document["document_version"] = document.get("document_version", 0) + 1
         if self._is_request_from_internal_service():
             return document
 
