@@ -24,7 +24,10 @@ class ElodyConfiguration(BaseObjectConfiguration):
         return {**super().crud(), **crud}
 
     def document_info(self):
-        return {"object_lists": {"metadata": "key", "relations": "type"}}
+        return {
+            "etag_key": "document_version",
+            "object_lists": {"metadata": "key", "relations": "type"},
+        }
 
     def logging(self, flat_document, **kwargs):
         return super().logging(flat_document, **kwargs)
