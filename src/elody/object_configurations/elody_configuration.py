@@ -1,5 +1,4 @@
 from copy import deepcopy
-from datetime import datetime, timezone
 from elody.object_configurations.base_object_configuration import (
     BaseObjectConfiguration,
 )
@@ -72,6 +71,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             ),
             "metadata": [],
             "relations": [],
+            "document_version": 1,
             "schema": {"type": self.SCHEMA_TYPE, "version": self.SCHEMA_VERSION},
         }
 
@@ -165,6 +165,8 @@ class ElodyConfiguration(BaseObjectConfiguration):
         return sanitized_document
 
     def __patch_document_audit_info(self, crud, document, timestamp, audit_override):
+        if crud == "update":
+            document["document_version"] = document["document_version"] + 1
         if self._is_request_from_internal_service():
             return document
 
