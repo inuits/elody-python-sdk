@@ -52,6 +52,14 @@ class BaseObjectConfiguration(ABC):
             info_labels["email"] = user_context.email
             info_labels["user_roles"] = ", ".join(user_context.x_tenant.roles)
             info_labels["x_tenant"] = user_context.x_tenant.id
+            try:
+                from flask import request
+
+                info_labels["X-From-Service"] = request.headers.get(
+                    "X-From-Service", ""
+                )
+            except Exception:
+                pass
         except Exception:
             pass
         return {"info_labels": info_labels, "loki_indexed_info_labels": {}}

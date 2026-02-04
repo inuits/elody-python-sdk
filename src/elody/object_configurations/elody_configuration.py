@@ -168,16 +168,28 @@ class ElodyConfiguration(BaseObjectConfiguration):
         return sanitized_document
 
     def __patch_document_audit_info(self, crud, document, timestamp, audit_override):
+        # This audit patch/config is not meant for high frequency updating observation/telemetry documents
+        if self._is_request_from_internal_service():
+            document.update({f"date_{crud}d_by_service": timestamp})
+            try:
+                from flask import request
+
+                document.update(
+                    {f"{crud}d_by_service": request.headers.get("X-From-Service")}
+                )
+            except Exception:
+                pass
+        else:
+            document.update({f"date_{crud}d": timestamp})
+            if email := self._get_user_context_id():
+                label = f"{crud}d_by" if crud == "create" else "last_editor"
+                document.update({label: email})
+            document.update(
+                {key: value for key, value in audit_override.items() if value}
+            )
+
         if crud == "update":
             document["document_version"] = document.get("document_version", 0) + 1
-        if self._is_request_from_internal_service():
-            return document
-
-        document.update({f"date_{crud}d": timestamp})
-        if email := self._get_user_context_id():
-            label = f"{crud}d_by" if crud == "create" else "last_editor"
-            document.update({label: email})
-        document.update({key: value for key, value in audit_override.items() if value})
         return document
 
     def __patch_document_unique_value(self, document):
