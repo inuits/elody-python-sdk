@@ -118,7 +118,9 @@ class BaseObjectConfiguration(ABC):
         sanitized_document = {}
         document_deepcopy = deepcopy(document)
         for key, value in document_deepcopy.items():
-            if isinstance(value, dict):
+            if not value:
+                continue
+            elif isinstance(value, dict):
                 sanitized_value = BaseObjectConfiguration._sanitize_document(
                     self, document=value
                 )
@@ -136,7 +138,7 @@ class BaseObjectConfiguration(ABC):
                 lines = value.splitlines()
                 value = "\n".join(line.strip() for line in lines).strip()
                 sanitized_document[key] = value.strip()
-            elif value:
+            else:
                 sanitized_document[key] = value
         return sanitized_document
 

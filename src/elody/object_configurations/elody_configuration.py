@@ -153,10 +153,10 @@ class ElodyConfiguration(BaseObjectConfiguration):
         self, *, document, object_list_name, object_list_value_field_name, **kwargs
     ):
         sanitized_document = super()._sanitize_document(document=document, **kwargs)
-        for element in document[object_list_name]:
+        for element in document.get(object_list_name, []):
             if not element.get(object_list_value_field_name):
                 sanitized_document[object_list_name].remove(element)
-        for element in sanitized_document[object_list_name]:
+        for element in sanitized_document.get(object_list_name, []):
             value = element[object_list_value_field_name]
             if isinstance(value, str):
                 lines = value.splitlines()
