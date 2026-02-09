@@ -100,7 +100,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                 if key in object_lists:
                     if key != "relations":
                         for value_element in value:
-                            for item_element in document[key]:
+                            for item_element in document.get(key, []):
                                 if (
                                     item_element[object_lists[key]]
                                     == value_element[object_lists[key]]
@@ -109,7 +109,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                                     break
                     else:
                         for value_element in value:
-                            for item_element in document[key]:
+                            for item_element in document.get(key, []):
                                 if (
                                     item_element[object_lists[key]]
                                     == value_element[object_lists[key]]
