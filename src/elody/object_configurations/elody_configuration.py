@@ -242,27 +242,35 @@ class ElodyConfiguration(BaseObjectConfiguration):
                         }
                     }
                 )
-            elif key not in ["date_created", "date_updated", "last_editor"]:
+            else:
                 addFields.update(
                     {
                         key: {
-                            "$arrayElemAt": [
+                            "$ifNull": [
                                 {
-                                    "$map": {
-                                        "input": {
-                                            "$filter": {
-                                                "input": "$metadata",
-                                                "as": "metadata",
-                                                "cond": {
-                                                    "$eq": ["$$metadata.key", key]
+                                    "$arrayElemAt": [
+                                        {
+                                            "$map": {
+                                                "input": {
+                                                    "$filter": {
+                                                        "input": "$metadata",
+                                                        "as": "metadata",
+                                                        "cond": {
+                                                            "$eq": [
+                                                                "$$metadata.key",
+                                                                key,
+                                                            ]
+                                                        },
+                                                    }
                                                 },
+                                                "as": "metadata",
+                                                "in": {"$toLower": "$$metadata.value"},
                                             }
                                         },
-                                        "as": "metadata",
-                                        "in": {"$toLower": "$$metadata.value"},
-                                    }
+                                        0,
+                                    ]
                                 },
-                                0,
+                                {"$toLower": f"${key}"},
                             ]
                         }
                     }
