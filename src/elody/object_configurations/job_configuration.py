@@ -42,7 +42,8 @@ class JobConfiguration(ElodyConfiguration):
         return {**super().crud(), **crud}
 
     def document_info(self):
-        return super().document_info()
+        document_info = {"etag_key": ""}
+        return {**super().document_info(), **document_info}
 
     def logging(self, flat_document, **kwargs):
         return super().logging(flat_document, **kwargs)
