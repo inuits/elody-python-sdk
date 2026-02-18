@@ -346,7 +346,13 @@ def __is_allowed_to_crud_item_keys(
 
 
 def __item_value_in_values(
-    flat_item, key, values: list, flat_request_body, user_context: UserContext
+    flat_item,
+    key,
+    values: list,
+    flat_request_body,
+    user_context: UserContext,
+    *,
+    root_flat_item=None,
 ):
     if __matches_combined_expected_values(
         flat_item, key, values, flat_request_body, user_context
@@ -390,12 +396,21 @@ def __item_value_in_values(
                 if g.get("dry_run") or is_optional:
                     return True
                 raise exception
+            if not root_flat_item:
+                root_flat_item = flat_item
             flat_item, _ = get_flat_item_and_object_lists(item)
             return __item_value_in_values(
-                flat_item, key_of_relation, values, flat_request_body, user_context
+                flat_item,
+                key_of_relation,
+                values,
+                flat_request_body,
+                user_context,
+                root_flat_item=root_flat_item,
             )
 
-    return __matches_expected_values(flat_item, item_value, values, negate_condition)
+    return __matches_expected_values(
+        root_flat_item or flat_item, item_value, values, negate_condition
+    )
 
 
 def __matches_combined_expected_values(
