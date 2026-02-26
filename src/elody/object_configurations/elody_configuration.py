@@ -207,7 +207,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             if key == "order":
                 addFields.update(
                     {
-                        key: {
+                        f"_sorting_{key}": {
                             "$arrayElemAt": [
                                 {
                                     "$map": {
@@ -245,7 +245,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             else:
                 addFields.update(
                     {
-                        key: {
+                        f"_sorting_{key}": {
                             "$ifNull": [
                                 {
                                     "$arrayElemAt": [
@@ -275,7 +275,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
                         }
                     }
                 )
-            sort.update({key: order})
+            sort.update({f"_sorting_{key}": order})
         pipeline = []
         if addFields:
             pipeline.append({"$addFields": addFields})
