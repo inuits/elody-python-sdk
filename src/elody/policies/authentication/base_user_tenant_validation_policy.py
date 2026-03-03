@@ -96,7 +96,10 @@ class BaseUserTenantValidationPolicy(ABC):
                     metadata["key"]
                     == user_context.bag["user_metadata_key_for_global_roles"]
                 ):
-                    roles.extend(metadata["value"])
+                    if isinstance(metadata["value"], list):
+                        roles.extend(metadata["value"])
+                    else:
+                        roles.append(metadata["value"])
 
             if user_context.x_tenant.id:
                 tenant_ids = user_context.x_tenant.id.split(",")
