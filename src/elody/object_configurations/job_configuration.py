@@ -63,6 +63,9 @@ class JobConfiguration(ElodyConfiguration):
             document["last_editor"] = email
         return document
 
+    def _has_content_changes(self, *, document, unpatched_document, **kwargs):
+        return True
+
     def _post_crud_hook(self, *, crud, document, get_rabbit, **kwargs):
         if crud == "create":
             send_cloudevent(

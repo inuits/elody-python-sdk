@@ -11,6 +11,9 @@ class BaseObjectConfiguration(ABC):
     @abstractmethod
     def crud(self):
         return {
+            "content_changes_checker": lambda document, unpatched_document, **kwargs: self._has_content_changes(
+                document=document, unpatched_document=unpatched_document
+            ),
             "creation_preparer": lambda post_body, **kwargs: post_body,
             "creator": lambda post_body, **kwargs: post_body,
             "document_content_patcher": lambda *, document, content, overwrite=False, **kwargs: self._document_content_patcher(
@@ -85,6 +88,11 @@ class BaseObjectConfiguration(ABC):
     def _document_content_patcher(
         self, *, document, content, overwrite=False, **kwargs
     ):
+        raise NotImplementedError(
+            "Provide concrete implementation in child object configuration"
+        )
+
+    def _has_content_changes(self, *, document, unpatched_document, **kwargs):
         raise NotImplementedError(
             "Provide concrete implementation in child object configuration"
         )
