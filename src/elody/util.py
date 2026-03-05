@@ -96,18 +96,33 @@ def __flatten_dict_generator(object_lists, data: MutableMapping, parent_key):
             yield from flatten_dict(object_lists, value, flattened_key).items()
         elif isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
             if all(isinstance(item, MutableMapping) for item in value):
-                item_key = None
-                for item in value:
-                    item_key = item.get(object_lists.get(key))
-                    if item_key:
-                        if isinstance(item, MutableMapping):
-                            yield from flatten_dict(
-                                object_lists, item, f"{flattened_key}.{item_key}"
-                            ).items()
-                        else:
-                            yield f"{flattened_key}.{item_key}", item["value"]
-                if not item_key:
-                    yield flattened_key, value
+                if object_list := object_lists.get(key):
+                    item_key = None
+                    for item in value:
+                        item_key = item.get(object_list)
+                        if item_key:
+                            if isinstance(item, MutableMapping):
+                                yield from flatten_dict(
+                                    object_lists, item, f"{flattened_key}.{item_key}"
+                                ).items()
+                            else:
+                                yield f"{flattened_key}.{item_key}", item["value"]
+                    if not item_key:
+                        yield flattened_key, value
+                else:
+                    item_keys = set().union(*(metadata.keys() for metadata in value))
+                    for item_key in item_keys:
+                        values_for_key = [
+                            item[item_key] for item in value if item_key in item
+                        ]
+                        values_for_key = (
+                            values_for_key[0]
+                            if len(values_for_key) == 1
+                            else values_for_key
+                        )
+                        yield from flatten_dict(
+                            object_lists, {item_key: values_for_key}, flattened_key
+                        ).items()
             else:
                 yield flattened_key, value
         else:
