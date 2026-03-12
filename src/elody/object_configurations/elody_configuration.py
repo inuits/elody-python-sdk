@@ -125,6 +125,33 @@ class ElodyConfiguration(BaseObjectConfiguration):
 
         return document
 
+    def _has_content_changes(self, *, document, unpatched_document, **_):
+        unpatched_document = self._sanitize_document(
+            document=unpatched_document,
+            object_list_name="metadata",
+            object_list_value_field_name="value",
+            remove_audit_info=True,
+        )
+        unpatched_document = self._sanitize_document(
+            document=unpatched_document,
+            object_list_name="metadata",
+            object_list_value_field_name="value",
+            remove_audit_info=True,
+        )
+        document = self._sanitize_document(
+            document=document,
+            object_list_name="relations",
+            object_list_value_field_name="key",
+            remove_audit_info=True,
+        )
+        document = self._sanitize_document(
+            document=document,
+            object_list_name="relations",
+            object_list_value_field_name="key",
+            remove_audit_info=True,
+        )
+        return document != unpatched_document
+
     def _post_crud_hook(self, **kwargs):
         pass
 
@@ -150,9 +177,34 @@ class ElodyConfiguration(BaseObjectConfiguration):
         return document
 
     def _sanitize_document(
-        self, *, document, object_list_name, object_list_value_field_name, **kwargs
+        self,
+        *,
+        document,
+        object_list_name,
+        object_list_value_field_name,
+        remove_audit_info=False,
+        **kwargs,
     ):
         sanitized_document = super()._sanitize_document(document=document, **kwargs)
+        if remove_audit_info:
+            for key in [
+                "date_created",
+                "date_updated",
+                "date_deleted",
+                "date_created_by_service",
+                "date_updated_by_service",
+                "date_deleted_by_service",
+                "created_by",
+                "updated_by",
+                "deleted_by",
+                "created_by_service",
+                "updated_by_service",
+                "deleted_by_service",
+                "last_editor",
+                "document_version",
+            ]:
+                sanitized_document.pop(key, None)
+
         for element in document.get(object_list_name, []):
             if not element.get(object_list_value_field_name):
                 sanitized_document[object_list_name].remove(element)
@@ -165,6 +217,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             for key, value in deepcopy(element).items():
                 if not value:
                     del element[key]
+
         return sanitized_document
 
     def __patch_document_audit_info(self, crud, document, timestamp, audit_override):
