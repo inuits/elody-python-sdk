@@ -134,14 +134,14 @@ class ElodyConfiguration(BaseObjectConfiguration):
         )
         unpatched_document = self._sanitize_document(
             document=unpatched_document,
-            object_list_name="metadata",
-            object_list_value_field_name="value",
+            object_list_name="relations",
+            object_list_value_field_name="key",
             remove_audit_info=True,
         )
         document = self._sanitize_document(
             document=document,
-            object_list_name="relations",
-            object_list_value_field_name="key",
+            object_list_name="metadata",
+            object_list_value_field_name="value",
             remove_audit_info=True,
         )
         document = self._sanitize_document(
