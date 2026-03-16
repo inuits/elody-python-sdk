@@ -12,6 +12,13 @@ class DuplicateFileException(Exception):
         self.md5sum = md5sum
 
 
+class EmptyFileException(Exception):
+    def __init__(self, message, filename=None):
+        super().__init__(message)
+        self.message = message
+        self.filename = filename
+
+
 class ColumnNotFoundException(Exception):
     pass
 
