@@ -19,6 +19,7 @@ def generate_filter_key_and_lookup_from_restricted_key(key):
         "local_field": local_field,
         "foreign_field": "identifiers",
         "as": f"__lookup.virtual_relations.{document_type}",
+        "preserve_null_and_empty_arrays": True,
     }
     return f"{lookup_prefix}{lookup['as']}.{key}", lookup
 
