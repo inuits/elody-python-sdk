@@ -257,6 +257,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
     def _sorting(self, key_order_map, **_):
         addFields, sort = {}, {}
         for key, order in key_order_map.items():
+            key = key.removeprefix("metadata.").removesuffix(".value")
             if key == "order":
                 addFields.update(
                     {
