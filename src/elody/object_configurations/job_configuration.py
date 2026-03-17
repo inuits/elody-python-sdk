@@ -212,10 +212,13 @@ class JobConfiguration(ElodyConfiguration):
             "id": id,
             "patch": {
                 "metadata": [
-                    {"key": "info", "value": message},
+                    {
+                        "key": "info",
+                        "value": message,
+                    },
                     {
                         "key": "status",
-                        "value": (status.value),
+                        "value": status.value,
                     },
                 ]
             },
