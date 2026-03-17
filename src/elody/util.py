@@ -9,7 +9,6 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from os import getenv
 
-
 URL_UNFRIENDLY_CHARS = {
     " ": "%20",
     "!": "%21",

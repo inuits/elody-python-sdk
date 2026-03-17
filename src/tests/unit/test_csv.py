@@ -5,7 +5,6 @@ from elody.exceptions import (
 )
 from elody.csv import CSVMultiObject
 
-
 sample_basic_csv_digipolis = """external_id,external_system,type,file_source,file_identifier,asset_copyright_color,mediafile_copyright_color,photographer,license
 tg:lhaq:8363:m1,arches,asset,file,meeuw.jpg,orange,red,Jos,test
 """
