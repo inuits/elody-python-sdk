@@ -394,7 +394,7 @@ def __item_value_in_values(
                 )
             except NotFound as exception:
                 if g.get("dry_run") or is_optional:
-                    return True
+                    return True and not key_of_relation.startswith("!")
                 raise exception
             if not root_flat_item:
                 root_flat_item = flat_item
