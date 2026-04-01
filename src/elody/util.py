@@ -9,6 +9,8 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from os import getenv
 
+ROUTING_KEY_PREFIX = getenv("ROUTING_KEY_PREFIX", "dams")
+
 URL_UNFRIENDLY_CHARS = {
     " ": "%20",
     "!": "%21",
@@ -234,14 +236,16 @@ def send_cloudevent(mq_client, source, routing_key, data, exchange_name=None):
 
 def signal_child_relation_changed(mq_client, collection, id):
     data = {"parent_id": id, "collection": collection}
-    send_cloudevent(mq_client, "dams", "dams.child_relation_changed", data)
+    send_cloudevent(
+        mq_client, "dams", f"{ROUTING_KEY_PREFIX}.child_relation_changed", data
+    )
 
 
 def signal_edge_changed(mq_client, parent_ids_from_changed_edges):
     data = {
         "location": f'/entities?ids={",".join(parent_ids_from_changed_edges)}&skip_relations=1'
     }
-    send_cloudevent(mq_client, "dams", "dams.edge_changed", data)
+    send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.edge_changed", data)
 
 
 def signal_entity_changed(mq_client, entity, unchanged_entity=None):
@@ -250,42 +254,53 @@ def signal_entity_changed(mq_client, entity, unchanged_entity=None):
         "type": entity.get("type", "unspecified"),
         "unchanged_entity": unchanged_entity,
     }
-    send_cloudevent(mq_client, "dams", "dams.entity_changed", data)
+    send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.entity_changed", data)
 
 
 def signal_entity_deleted(mq_client, entity):
     data = {"_id": get_raw_id(entity), "type": entity.get("type", "unspecified")}
-    send_cloudevent(mq_client, "dams", "dams.entity_deleted", data)
+    send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.entity_deleted", data)
 
 
 def signal_mediafiles_added_for_entity(mq_client, entity, mediafiles):
     data = {"entity": entity, "mediafiles": mediafiles}
-    send_cloudevent(mq_client, "dams", "dams.mediafiles_added_for_entity", data)
+    send_cloudevent(
+        mq_client, "dams", f"{ROUTING_KEY_PREFIX}.mediafiles_added_for_entity", data
+    )
 
 
 def signal_relations_deleted_for_entity(mq_client, entity, relations):
     data = {"entity": entity, "relations": relations}
-    send_cloudevent(mq_client, "dams", "dams.relations_deleted_for_entity", data)
+    send_cloudevent(
+        mq_client, "dams", f"{ROUTING_KEY_PREFIX}.relations_deleted_for_entity", data
+    )
 
 
 def signal_mediafile_changed(mq_client, old_mediafile, mediafile):
     data = {"old_mediafile": old_mediafile, "mediafile": mediafile}
-    send_cloudevent(mq_client, "dams", "dams.mediafile_changed", data)
+    send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.mediafile_changed", data)
 
 
 def signal_mediafile_deleted(mq_client, mediafile, linked_entities):
     data = {"mediafile": mediafile, "linked_entities": linked_entities}
-    send_cloudevent(mq_client, "dams", "dams.mediafile_deleted", data)
+    send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.mediafile_deleted", data)
 
 
 def signal_update_copyright_color_entity(mq_client, entity_id):
     data = {"_id": entity_id}
-    send_cloudevent(mq_client, "dams", "dams.update_copyright_color_entity", data)
+    send_cloudevent(
+        mq_client, "dams", f"{ROUTING_KEY_PREFIX}.update_copyright_color_entity", data
+    )
 
 
 def signal_update_copyright_color_mediafile(mq_client, mediafile_id):
     data = {"_id": mediafile_id}
-    send_cloudevent(mq_client, "dams", "dams.update_copyright_color_mediafile", data)
+    send_cloudevent(
+        mq_client,
+        "dams",
+        f"{ROUTING_KEY_PREFIX}.update_copyright_color_mediafile",
+        data,
+    )
 
 
 def signal_upload_file(mq_client, upload_links, selected_folder, parent_job_id=None):
@@ -294,7 +309,7 @@ def signal_upload_file(mq_client, upload_links, selected_folder, parent_job_id=N
         "selected_folder": selected_folder,
         "parent_job_id": parent_job_id,
     }
-    send_cloudevent(mq_client, "dams", "dams.upload_file", data)
+    send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.upload_file", data)
 
 
 def signal_upload_external_mediafile(
@@ -306,4 +321,6 @@ def signal_upload_external_mediafile(
         "ticket_id": ticket_id,
         "job_id": job_id,
     }
-    send_cloudevent(mq_client, "dams", "dams.upload_external_mediafile", data)
+    send_cloudevent(
+        mq_client, "dams", f"{ROUTING_KEY_PREFIX}.upload_external_mediafile", data
+    )

@@ -8,6 +8,8 @@ from elody.object_configurations.elody_configuration import (
 )
 from elody.util import send_cloudevent
 
+ROUTING_KEY_PREFIX = getenv("ROUTING_KEY_PREFIX", "dams")
+
 
 class Status(str, Enum):
     QUEUED = "queued"
@@ -31,12 +33,12 @@ class JobConfiguration(ElodyConfiguration):
             "init_job": lambda *args, **kwargs: self._init_job(*args, **kwargs),
             "start_job": lambda *args, **kwargs: self._start_job(*args, **kwargs),
             "finish_job": lambda *args, **kwargs: self._finish_job(*args, **kwargs),
-            "finish_job_with_warning": lambda *args, **kwargs: self._finish_job_with_warning(
-                *args, **kwargs
+            "finish_job_with_warning": lambda *args, **kwargs: (
+                self._finish_job_with_warning(*args, **kwargs)
             ),
             "fail_job": lambda *args, **kwargs: self._fail_job(*args, **kwargs),
-            "handle_parent_job_finished": lambda *args, **kwargs: self._handle_parent_job_finished(
-                *args, **kwargs
+            "handle_parent_job_finished": lambda *args, **kwargs: (
+                self._handle_parent_job_finished(*args, **kwargs)
             ),
         }
         return {**super().crud(), **crud}
@@ -71,14 +73,14 @@ class JobConfiguration(ElodyConfiguration):
             send_cloudevent(
                 get_rabbit(),
                 getenv("MQ_EXCHANGE", "dams"),
-                "dams.job_created",
+                f"{ROUTING_KEY_PREFIX}.job_created",
                 document,
             )
         elif crud == "update":
             send_cloudevent(
                 get_rabbit(),
                 getenv("MQ_EXCHANGE", "dams"),
-                "dams.job_changed",
+                f"{ROUTING_KEY_PREFIX}.job_changed",
                 document,
             )
 
@@ -205,7 +207,6 @@ class JobConfiguration(ElodyConfiguration):
         self._post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
 
     def _fail_job(self, id, exception_message, *, get_rabbit):
-
         status, message = self.__handle_error_warnings(exception_message)
 
         document = {
@@ -226,7 +227,6 @@ class JobConfiguration(ElodyConfiguration):
         self._post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
 
     def _handle_parent_job_finished(self, id, parent_child_status, *, get_rabbit):
-
         child_jobs_failed = parent_child_status[Status.FAILED.value]
         child_jobs_warning = parent_child_status[Status.WARNING.value]
 
@@ -245,7 +245,6 @@ class JobConfiguration(ElodyConfiguration):
         self,
         errormessage: str,
     ) -> tuple[Literal[Status.WARNING] | Literal[Status.FAILED], str]:
-
         if errormessage.startswith("W4009"):
             return Status.WARNING, errormessage
 
