@@ -2,8 +2,8 @@ import json
 import mimetypes
 import re as regex
 
-from cloudevents.conversion import to_dict
-from cloudevents.http import CloudEvent
+from cloudevents.v1.conversion import to_dict
+from cloudevents.v1.http import CloudEvent
 from collections.abc import MutableMapping, Iterable
 from copy import deepcopy
 from datetime import datetime, timezone
