@@ -1,17 +1,19 @@
-import os
 import requests
 
 from .exceptions import NonUniqueException, NotFoundException
+from hashlib import md5
+from os import environ
+from urllib.parse import urlparse, parse_qs
 
 
 class Client:
     def __init__(
         self, elody_collection_url=None, static_jwt=None, extra_headers=None, proxy=None
     ):
-        self.elody_collection_url = elody_collection_url or os.environ.get(
+        self.elody_collection_url = elody_collection_url or environ.get(
             "ELODY_COLLECTION_URL", None
         )
-        self.static_jwt = static_jwt or os.environ.get("STATIC_JWT", None)
+        self.static_jwt = static_jwt or environ.get("STATIC_JWT", None)
         self.headers = {"Authorization": f"Bearer {self.static_jwt}"}
         if extra_headers:
             self.headers = {**self.headers, **extra_headers}
@@ -212,11 +214,82 @@ class Client:
         if user_email and "&user_email" not in upload_location:
             upload_location = f"{upload_location}&user_email={user_email}"
         print(upload_location)
-        mediafile = requests.get(file_url, proxies=self.proxies).content
+
+        parsed_upload_location = urlparse(upload_location)
+        storage_api_url = (
+            f"{parsed_upload_location.scheme}://{parsed_upload_location.netloc}"
+        )
+        mediafile_id = parse_qs(parsed_upload_location.query).get("id", [None])[0]
+        if not mediafile_id:
+            raise ValueError(f"Could not extract mediafile_id from {upload_location}")
+
         response = requests.post(
-            upload_location,
-            files={"file": mediafile},
+            f"{storage_api_url}/upload/init-stream",
+            params={"mediafile_id": mediafile_id},
             headers=self.headers,
             proxies=self.proxies,
         )
+        response.raise_for_status()
+        stream_info = response.json()
+
+        mediafile_md5sum = md5()
+        chunks_info = []
+        try:
+            with requests.get(
+                file_url, proxies=self.proxies, stream=True, timeout=None
+            ) as mediafile_stream:
+                mediafile_stream.raise_for_status()
+                content_length = int(mediafile_stream.headers.get("Content-Length", 0))
+                bytes_sent = 0
+                for i, chunk in enumerate(
+                    mediafile_stream.iter_content(chunk_size=(50 * (1024**2))), start=1
+                ):
+                    if not chunk:
+                        break
+                    mediafile_md5sum.update(chunk)
+                    bytes_sent += len(chunk)
+                    print(
+                        f"Progress: {bytes_sent / (1024**2):.2f} MB / {content_length / (1024**2):.2f} MB ({(bytes_sent / content_length) * 100 if content_length > 0 else 0:.2f}%)",
+                        end="\r",
+                    )
+
+                    response = requests.post(
+                        f"{storage_api_url}/upload/sign-chunk",
+                        json={**stream_info, "chunk_sequence": i},
+                        headers=self.headers,
+                        proxies=self.proxies,
+                    )
+                    response.raise_for_status()
+                    upload_url = response.json()["upload_url"]
+
+                    response = requests.put(upload_url, data=chunk, timeout=600)
+                    response.raise_for_status()
+                    etag = response.headers["ETag"]
+
+                    chunks_info.append({"sequence_number": i, "hash": etag})
+
+            response = requests.post(
+                f"{storage_api_url}/upload/complete-stream",
+                json={
+                    **stream_info,
+                    "chunks_info": chunks_info,
+                    "file_info": {
+                        "md5sum": mediafile_md5sum.hexdigest(),
+                        "name": filename,
+                    },
+                },
+                headers=self.headers,
+                proxies=self.proxies,
+            )
+        except (Exception, KeyboardInterrupt) as exception:
+            print(f"Failed to upload mediafile: {exception}. Aborting stream...")
+            response = requests.post(
+                f"{storage_api_url}/upload/abort-stream",
+                json=stream_info,
+                headers=self.headers,
+                proxies=self.proxies,
+            )
+            raise exception
+
+        print()
         return self.__handle_response(response, "Failed to upload mediafile")
