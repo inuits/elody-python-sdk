@@ -8,10 +8,19 @@ from urllib.parse import urlparse, parse_qs
 
 class Client:
     def __init__(
-        self, elody_collection_url=None, static_jwt=None, extra_headers=None, proxy=None
+        self,
+        elody_collection_url=None,
+        static_jwt=None,
+        extra_headers=None,
+        proxy=None,
+        *,
+        elody_storage_api_url=None,
     ):
         self.elody_collection_url = elody_collection_url or environ.get(
             "ELODY_COLLECTION_URL", None
+        )
+        self.elody_storage_api_url = elody_storage_api_url or environ.get(
+            "ELODY_STORAGE_API_URL", None
         )
         self.static_jwt = static_jwt or environ.get("STATIC_JWT", None)
         self.headers = {"Authorization": f"Bearer {self.static_jwt}"}
@@ -216,15 +225,12 @@ class Client:
         print(upload_location)
 
         parsed_upload_location = urlparse(upload_location)
-        storage_api_url = (
-            f"{parsed_upload_location.scheme}://{parsed_upload_location.netloc}"
-        )
         mediafile_id = parse_qs(parsed_upload_location.query).get("id", [None])[0]
         if not mediafile_id:
             raise ValueError(f"Could not extract mediafile_id from {upload_location}")
 
         response = requests.post(
-            f"{storage_api_url}/upload/init-stream",
+            f"{self.elody_storage_api_url}/upload/init-stream",
             params={"mediafile_id": mediafile_id},
             headers=self.headers,
             proxies=self.proxies,
@@ -254,7 +260,7 @@ class Client:
                     )
 
                     response = requests.post(
-                        f"{storage_api_url}/upload/sign-chunk",
+                        f"{self.elody_storage_api_url}/upload/sign-chunk",
                         json={**stream_info, "chunk_sequence": i},
                         headers=self.headers,
                         proxies=self.proxies,
@@ -269,7 +275,7 @@ class Client:
                     chunks_info.append({"sequence_number": i, "hash": etag})
 
             response = requests.post(
-                f"{storage_api_url}/upload/complete-stream",
+                f"{self.elody_storage_api_url}/upload/complete-stream",
                 json={
                     **stream_info,
                     "chunks_info": chunks_info,
@@ -284,7 +290,7 @@ class Client:
         except (Exception, KeyboardInterrupt) as exception:
             print(f"Failed to upload mediafile: {exception}. Aborting stream...")
             response = requests.post(
-                f"{storage_api_url}/upload/abort-stream",
+                f"{self.elody_storage_api_url}/upload/abort-stream",
                 json=stream_info,
                 headers=self.headers,
                 proxies=self.proxies,
