@@ -160,12 +160,7 @@ class JobConfiguration(ElodyConfiguration):
         )
         return job["_id"]
 
-    def _start_job(
-        self,
-        id,
-        *,
-        get_rabbit,
-    ):
+    def _start_job(self, id, *, get_rabbit, restart: bool = True):
         document = {
             "id": id,
             "patch": {
@@ -173,6 +168,8 @@ class JobConfiguration(ElodyConfiguration):
                 "metadata": [{"key": "status", "value": Status.RUNNING.value}],
             },
         }
+        if restart:
+            document.update({"restart": restart})
         self._post_crud_hook(crud="update", document=document, get_rabbit=get_rabbit)
 
     def _finish_job(
