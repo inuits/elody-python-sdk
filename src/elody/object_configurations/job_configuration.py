@@ -135,6 +135,7 @@ class JobConfiguration(ElodyConfiguration):
                 {
                     "key": "child_jobs",
                     "value": {
+                        "initiated": 0,
                         Status.QUEUED.value: 0,
                         Status.RUNNING.value: 0,
                         Status.FAILED.value: 0,
