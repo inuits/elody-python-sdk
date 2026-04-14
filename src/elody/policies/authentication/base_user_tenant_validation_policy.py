@@ -92,10 +92,9 @@ class BaseUserTenantValidationPolicy(ABC):
         roles = []
         try:
             for metadata in self.user.get("metadata", []):
-                if (
-                    metadata["key"]
-                    == user_context.bag["user_metadata_key_for_global_roles"]
-                ):
+                if metadata["key"] == user_context.bag[
+                    "user_metadata_key_for_global_roles"
+                ] and metadata.get("value"):
                     if isinstance(metadata["value"], list):
                         roles.extend(metadata["value"])
                     else:
