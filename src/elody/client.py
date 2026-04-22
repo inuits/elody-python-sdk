@@ -3,6 +3,8 @@ import requests
 from .exceptions import NonUniqueException, NotFoundException
 from hashlib import md5
 from os import environ
+from requests.exceptions import ConnectionError
+from time import sleep
 from urllib.parse import urlparse, parse_qs
 
 
@@ -239,63 +241,130 @@ class Client:
         stream_info = response.json()
 
         mediafile_md5sum = md5()
+        md5_state = None
         chunks_info = []
-        try:
-            with requests.get(
-                file_url, proxies=self.proxies, stream=True, timeout=None
-            ) as mediafile_stream:
-                mediafile_stream.raise_for_status()
-                content_length = int(mediafile_stream.headers.get("Content-Length", 0))
-                bytes_sent = 0
-                for i, chunk in enumerate(
-                    mediafile_stream.iter_content(chunk_size=(50 * (1024**2))), start=1
-                ):
-                    if not chunk:
-                        break
-                    mediafile_md5sum.update(chunk)
-                    bytes_sent += len(chunk)
-                    print(
-                        f"Progress: {bytes_sent / (1024**2):.2f} MB / {content_length / (1024**2):.2f} MB ({(bytes_sent / content_length) * 100 if content_length > 0 else 0:.2f}%)",
-                        end="\r",
+        retry_count = 0
+        while True:
+            exception = None
+            try:
+                if md5_state is not None:
+                    mediafile_md5sum = md5_state.copy()
+
+                response = requests.get(
+                    f"{self.elody_storage_api_url}/upload/stream-status",
+                    params=stream_info,
+                    headers=self.headers,
+                    proxies=self.proxies,
+                )
+                response.raise_for_status()
+                existing_chunks = {
+                    chunk["sequence_number"]: chunk["hash"]
+                    for chunk in response.json().get("uploaded_chunks", [])
+                }
+
+                chunk_size = 50 * (1024**2)
+                max_uploaded_chunk = (
+                    max(existing_chunks.keys()) if existing_chunks else 0
+                )
+                start_byte = max_uploaded_chunk * chunk_size
+
+                download_headers = {}
+                if start_byte > 0 and existing_chunks:
+                    download_headers["Range"] = f"bytes={start_byte}-"
+
+                with requests.get(
+                    file_url,
+                    headers=download_headers,
+                    proxies=self.proxies,
+                    stream=True,
+                    timeout=None,
+                ) as mediafile_stream:
+                    mediafile_stream.raise_for_status()
+                    if mediafile_stream.status_code == 200 and start_byte > 0:
+                        print(
+                            "Server ignored Range header. Starting download from 0..."
+                        )
+                        mediafile_md5sum = md5()
+                        md5_state = None
+                        chunks_info = []
+                        start_byte = 0
+                        max_uploaded_chunk = 0
+
+                    content_length = int(
+                        mediafile_stream.headers.get("Content-Length", 0)
                     )
+                    bytes_sent = start_byte
+                    for i, chunk in enumerate(
+                        mediafile_stream.iter_content(chunk_size=chunk_size),
+                        start=max_uploaded_chunk + 1,
+                    ):
+                        if not chunk:
+                            break
+                        mediafile_md5sum.update(chunk)
+                        bytes_sent += len(chunk)
+                        print(
+                            f"Progress: {bytes_sent / (1024**2):.2f} MB / {content_length / (1024**2):.2f} MB ({(bytes_sent / content_length) * 100 if content_length > 0 else 0:.2f}%)",
+                            end="\r",
+                        )
+                        if i in existing_chunks:
+                            chunks_info.append(
+                                {"sequence_number": i, "hash": existing_chunks[i]}
+                            )
+                            continue
 
-                    response = requests.post(
-                        f"{self.elody_storage_api_url}/upload/sign-chunk",
-                        json={**stream_info, "chunk_sequence": i},
-                        headers=self.headers,
-                        proxies=self.proxies,
-                    )
-                    response.raise_for_status()
-                    upload_url = response.json()["upload_url"]
+                        response = requests.post(
+                            f"{self.elody_storage_api_url}/upload/sign-chunk",
+                            json={**stream_info, "chunk_sequence": i},
+                            headers=self.headers,
+                            proxies=self.proxies,
+                        )
+                        response.raise_for_status()
+                        upload_url = response.json()["upload_url"]
 
-                    response = requests.put(upload_url, data=chunk, timeout=600)
-                    response.raise_for_status()
-                    etag = response.headers["ETag"]
+                        response = requests.put(upload_url, data=chunk, timeout=600)
+                        response.raise_for_status()
+                        etag = response.headers["ETag"]
 
-                    chunks_info.append({"sequence_number": i, "hash": etag})
+                        chunks_info.append({"sequence_number": i, "hash": etag})
+                        md5_state = mediafile_md5sum.copy()
 
-            response = requests.post(
-                f"{self.elody_storage_api_url}/upload/complete-stream",
-                json={
-                    **stream_info,
-                    "chunks_info": chunks_info,
-                    "file_info": {
-                        "md5sum": mediafile_md5sum.hexdigest(),
-                        "name": filename,
+                response = requests.post(
+                    f"{self.elody_storage_api_url}/upload/complete-stream",
+                    json={
+                        **stream_info,
+                        "chunks_info": chunks_info,
+                        "file_info": {
+                            "md5sum": mediafile_md5sum.hexdigest(),
+                            "name": filename,
+                        },
                     },
-                },
-                headers=self.headers,
-                proxies=self.proxies,
+                    headers=self.headers,
+                    proxies=self.proxies,
+                )
+            except ConnectionError as e:
+                exception = e
+            except (Exception, KeyboardInterrupt) as e:
+                retry_count = 4
+                exception = e
+            if not exception:
+                break
+
+            retry_count += 1
+            if retry_count >= 4:
+                print(f"Failed to upload mediafile: {exception}. Aborting stream...")
+                requests.post(
+                    f"{self.elody_storage_api_url}/upload/abort-stream",
+                    json=stream_info,
+                    headers=self.headers,
+                    proxies=self.proxies,
+                )
+                raise exception
+
+            sleep_time = 10**retry_count
+            print(
+                f"Upload error: {exception}. Retrying in {sleep_time}s... (Attempt {retry_count}/4)"
             )
-        except (Exception, KeyboardInterrupt) as exception:
-            print(f"Failed to upload mediafile: {exception}. Aborting stream...")
-            response = requests.post(
-                f"{self.elody_storage_api_url}/upload/abort-stream",
-                json=stream_info,
-                headers=self.headers,
-                proxies=self.proxies,
-            )
-            raise exception
+            sleep(sleep_time)
 
         print()
         return self.__handle_response(response, "Failed to upload mediafile")
