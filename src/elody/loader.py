@@ -79,7 +79,7 @@ def load_queues(logger):
         try:
             import_module(f"apps.{app}.resources.queues")
         except ModuleNotFoundError:
-            pass
+            logger.warning(f"Queues for {app} could not be loaded")
 
 
 def __get_class(app, auth_type, policy_module_name):
