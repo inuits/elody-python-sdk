@@ -233,7 +233,7 @@ class ElodyConfiguration(BaseObjectConfiguration):
             except Exception:
                 pass
         else:
-            document.update({f"date_{crud}d": timestamp})
+            document.update({f"date_{crud}d": timestamp, "last_activity": timestamp})
             if email := self._get_user_context_id():
                 label = f"{crud}d_by" if crud == "create" else "last_editor"
                 document.update({label: email})
