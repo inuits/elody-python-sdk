@@ -5,12 +5,12 @@ requires      = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "elody"
-version = "0.0.259"
+name        = "elody"
+version     = "0.0.259"
 description = "elody SDK for Python"
-readme = "README.md"
-authors = [{ name = "Inuits", email = "developers@inuits.eu" }]
-license = { file = "LICENSE" }
+readme      = "README.md"
+authors     = [{ name = "Inuits", email = "developers@inuits.eu" }]
+license     = { file  = "LICENSE" }
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
   "Intended Audience :: Developers",
