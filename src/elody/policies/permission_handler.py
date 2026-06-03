@@ -331,7 +331,10 @@ def __is_allowed_to_crud_item_keys(
                         break
                 else:
                     try:
-                        del item[keys_info[0]["key"]][keys_info[1]["key"]]
+                        if len(keys_info) > 1:
+                            del item[keys_info[0]["key"]][keys_info[1]["key"]]
+                        else:
+                            del item[keys_info[0]["key"]]
                     except KeyError:
                         pass
                 if key_to_check and key_to_check == restricted_key:
