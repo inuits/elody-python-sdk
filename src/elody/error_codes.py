@@ -107,6 +107,9 @@ class ErrorCode(Enum):
     INSTITUTION_HAS_MISSING_DATA = ("12001", ["institution"])
     INSTITUTION_NOT_FOUND = ("12002", [])
 
+    # Podiumnet error codes
+    DESCRIPTION_SHORT_TOO_LONG = ("13000", [])
+
 
 def get_error_code(error_code, prefix):
     if prefix not in [ErrorCode.READ.value, ErrorCode.WRITE.value]:
