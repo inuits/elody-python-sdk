@@ -4,6 +4,7 @@ from enum import Enum
 class ErrorCode(Enum):
     READ = "R"
     WRITE = "W"
+    ALERT = "A"
 
     # General error codes
     UNKNOWN_ERROR = ("0002", [])
@@ -113,7 +114,7 @@ class ErrorCode(Enum):
 
 def get_error_code(error_code, prefix):
     if prefix not in [ErrorCode.READ.value, ErrorCode.WRITE.value]:
-        raise ValueError("Prefix must be 'R' for read or 'W' for write.")
+        raise ValueError("Prefix must be 'R' for read, 'W' for write or 'A' for alert.")
     return f"{prefix}{error_code.value[0]}"
 
 
@@ -123,3 +124,7 @@ def get_read():
 
 def get_write():
     return ErrorCode.WRITE.value
+
+
+def get_alert():
+    return ErrorCode.ALERT.value
