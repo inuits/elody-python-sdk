@@ -113,7 +113,11 @@ class ErrorCode(Enum):
 
 
 def get_error_code(error_code, prefix):
-    if prefix not in [ErrorCode.READ.value, ErrorCode.WRITE.value]:
+    if prefix not in [
+        ErrorCode.READ.value,
+        ErrorCode.WRITE.value,
+        ErrorCode.ALERT.value,
+    ]:
         raise ValueError("Prefix must be 'R' for read, 'W' for write or 'A' for alert.")
     return f"{prefix}{error_code.value[0]}"
 
