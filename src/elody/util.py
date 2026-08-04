@@ -1,13 +1,14 @@
 import json
 import mimetypes
 import re as regex
+from collections.abc import Iterable, MutableMapping
+from copy import deepcopy
+from datetime import datetime, timezone
+from logging import Logger, getLogger
+from os import getenv
 
 from cloudevents.v1.conversion import to_dict
 from cloudevents.v1.http import CloudEvent
-from collections.abc import MutableMapping, Iterable
-from copy import deepcopy
-from datetime import datetime, timezone
-from os import getenv
 
 ROUTING_KEY_PREFIX = getenv("ROUTING_KEY_PREFIX", "dams")
 
@@ -243,7 +244,7 @@ def signal_child_relation_changed(mq_client, collection, id):
 
 def signal_edge_changed(mq_client, parent_ids_from_changed_edges):
     data = {
-        "location": f'/entities?ids={",".join(parent_ids_from_changed_edges)}&skip_relations=1'
+        "location": f"/entities?ids={','.join(parent_ids_from_changed_edges)}&skip_relations=1"
     }
     send_cloudevent(mq_client, "dams", f"{ROUTING_KEY_PREFIX}.edge_changed", data)
 
@@ -324,3 +325,32 @@ def signal_upload_external_mediafile(
     send_cloudevent(
         mq_client, "dams", f"{ROUTING_KEY_PREFIX}.upload_external_mediafile", data
     )
+
+
+def get_boolean_env(key: str, default: bool = False) -> bool:
+    """Turn a boolean-like environment variable into an actual boolean."""
+
+    val = getenv(key)
+
+    if val is None:
+        return default
+
+    return val.strip().lower() in {"true", "1", "yes", "y", "t"}
+
+
+def get_int_env(key: str, default: int = 0, logger: Logger | None = None) -> int:
+    """Turn an int-like environment variable into an actual boolean."""
+    if not logger:
+        logger = getLogger(__name__)
+
+    val = getenv(key)
+    if val is None:
+        return default
+
+    try:
+        return int(val)
+    except ValueError:
+        logger.error(
+            f"Environment variable {key} could not be narrowed to an int, found value was {val}"
+        )
+        raise
