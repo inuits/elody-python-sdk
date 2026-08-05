@@ -227,6 +227,15 @@ def parse_url_unfriendly_string(
     return result
 
 
+def parse_filename_unfriendly_string(
+    input: str | None, *, replace_char="_"
+) -> str | None:
+    if input is None:
+        return None
+
+    return regex.sub(r'[<>:"/\\|?*]|^\.|\.$', replace_char, input)
+
+
 def send_cloudevent(mq_client, source, routing_key, data, exchange_name=None):
     event = to_dict(CloudEvent({"source": source, "type": routing_key}, data))
     if getenv("AMQP_MANAGER", "amqpstorm_flask") in ["amqpstorm_flask"]:
