@@ -136,16 +136,16 @@ def get_raw_id(item):
 
 
 def get_item_metadata_value(item, key):
-    for item in item.get("metadata", []):
-        if item["key"] == key:
-            return item["value"]
+    for metadata_item in item.get("metadata", []):
+        if metadata_item["key"] == key:
+            return metadata_item["value"]
     return ""
 
 
 def get_item_relation_key(item, type):
-    for item in item.get("relations", []):
-        if item["type"] == type:
-            return item["key"]
+    for relation_item in item.get("relations", []):
+        if relation_item["type"] == type:
+            return relation_item["key"]
     return ""
 
 
