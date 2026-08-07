@@ -1,6 +1,7 @@
 import re as regex
-
 from copy import deepcopy
+from os import getenv
+
 from elody.error_codes import ErrorCode, get_error_code, get_read
 from elody.policies.helpers import (
     generate_filter_key_and_lookup_from_restricted_key,
@@ -11,7 +12,6 @@ from elody.util import flatten_dict, interpret_flat_key
 from flask import g
 from inuits_policy_based_auth.contexts.user_context import UserContext
 from logging_elody.log import log  # pyright: ignore
-from os import getenv
 from storage.storagemanager import StorageManager  # pyright: ignore
 from werkzeug.exceptions import NotFound
 
@@ -274,12 +274,17 @@ def __is_allowed_to_crud_item(
 ):
     restrictions = restrictions_schema.get("object_restrictions", {})
 
-    for restricted_key, restricting_values in restrictions.items():
-        restricted_key = restricted_key.split(":")[1]
+    for raw_restricted_key, restricting_values in restrictions.items():
+        restricted_key = raw_restricted_key.split(":")[1]
         item_value_in_restricting_values = __item_value_in_values(
             flat_item, restricted_key, restricting_values, {}, user_context
         )
         if not item_value_in_restricting_values:
+            if error_message := restrictions_schema.get("error_messages", {}).get(
+                raw_restricted_key
+            ):
+                g.permission_error_message = error_message
+
             return None
 
     return True
