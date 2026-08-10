@@ -263,7 +263,7 @@ def __get_restrictions_schema(flat_item, permissions, crud):
         return restrictions_schema
 
     for schema in reversed(schemas.keys()):
-        if regex.match(f"^{schema_type}:[0-9]{1,3}?$", schema):
+        if regex.match(f"^{schema_type}:[0-9]{1, 3}?$", schema):
             break
         schema = None
     return schemas[schema] if schemas and schema else {}
@@ -387,7 +387,7 @@ def __item_value_in_values(
     except KeyError:
         if not is_optional:
             raise Exception(
-                f"{get_error_code(ErrorCode.METADATA_KEY_UNDEFINED, get_read())} | key:{key} | document:{flat_item.get('_id', flat_item["type"])} - Key {key} not found in document {flat_item.get('_id', flat_item["type"])}. Either prefix the key with '?' in your permission configuration to make it an optional restriction, or patch the document to include the key. '?' will allow access if key does not exist, '!?' will deny access if key does not exist."
+                f"{get_error_code(ErrorCode.METADATA_KEY_UNDEFINED, get_read())} | key:{key} | document:{flat_item.get('_id', flat_item['type'])} - Key {key} not found in document {flat_item.get('_id', flat_item['type'])}. Either prefix the key with '?' in your permission configuration to make it an optional restriction, or patch the document to include the key. '?' will allow access if key does not exist, '!?' will deny access if key does not exist."
             )
         return not negate_condition
     else:

@@ -69,9 +69,7 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.bag["http_method"] = request.method
         user_context.bag["requested_endpoint"] = request.endpoint
         user_context.bag["full_path"] = request.full_path
-        user_context.bag["collection_resolver"] = (
-            self._resolve_collections  # pyright: ignore
-        )
+        user_context.bag["collection_resolver"] = self._resolve_collections  # pyright: ignore
         return user_context
 
     def __get_tenant_roles(self, request, user_context: UserContext) -> list[str]:

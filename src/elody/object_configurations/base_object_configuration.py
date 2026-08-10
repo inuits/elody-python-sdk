@@ -11,20 +11,29 @@ class BaseObjectConfiguration(ABC):
     @abstractmethod
     def crud(self):
         return {
-            "content_changes_checker": lambda document, unpatched_document, **kwargs: self._has_content_changes(
-                document=document, unpatched_document=unpatched_document
+            "content_changes_checker": lambda document, unpatched_document, **kwargs: (
+                self._has_content_changes(
+                    document=document, unpatched_document=unpatched_document
+                )
             ),
             "creation_preparer": lambda post_body, **kwargs: post_body,
             "creator": lambda post_body, **kwargs: post_body,
-            "document_content_patcher": lambda *, document, content, overwrite=False, **kwargs: self._document_content_patcher(
-                document=document,
-                content=content,
-                overwrite=overwrite,
-                **kwargs,
+            "document_content_patcher": lambda *,
+            document,
+            content,
+            overwrite=False,
+            **kwargs: (
+                self._document_content_patcher(
+                    document=document,
+                    content=content,
+                    overwrite=overwrite,
+                    **kwargs,
+                )
             ),
-            "document_exception_message_constructor": lambda exception, fallback_message: fallback_message,
-            "nested_matcher_builder": lambda object_lists, keys_info, value, **kwargs: self.__build_nested_matcher(
-                object_lists, keys_info, value, **kwargs
+            "document_exception_message_constructor": lambda exception,
+            fallback_message: (fallback_message),
+            "nested_matcher_builder": lambda object_lists, keys_info, value, **kwargs: (
+                self.__build_nested_matcher(object_lists, keys_info, value, **kwargs)
             ),
             "post_crud_hook": lambda **kwargs: None,
             "pre_crud_hook": lambda *, document, **kwargs: document,
