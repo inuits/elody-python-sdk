@@ -99,7 +99,7 @@ class BaseObjectConfiguration(ABC):
 
     def _merge_object_lists(self, source, target, object_list_key):
         for target_item in target:
-            for source_item in source:
+            for source_item in deepcopy(source):
                 if source_item[object_list_key] == target_item[object_list_key]:
                     source.remove(source_item)
         return [*source, *target]
