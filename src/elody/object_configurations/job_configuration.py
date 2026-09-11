@@ -242,8 +242,8 @@ class JobConfiguration(ElodyConfiguration):
     def __handle_error_warnings(
         self,
         errormessage: str,
-    ) -> tuple[Literal[Status.WARNING] | Literal[Status.FAILED], str]:
-        if errormessage.startswith("W4009"):
+    ) -> tuple[Literal[Status.WARNING, Status.FAILED], str]:
+        if errormessage.startswith(("A4009", "W4009")):
             return Status.WARNING, errormessage
 
         return Status.FAILED, errormessage
