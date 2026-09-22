@@ -58,6 +58,8 @@ class ErrorCode(Enum):
     DUPLICATE_FILE = ("4009", ["existing_file"])
     NO_BUCKET_SPECIFIED = ("4010", [])
     EMPTY_FILE = ("4011", [])
+    NO_MEDIAFILES_TO_DOWNLOAD = ("4012", [])
+    NO_DOWNLOADABLE_MEDIAFILES = ("4013", [])
 
     # Validation error codes
     INVALID_INPUT = ("5001", [])
