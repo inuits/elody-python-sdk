@@ -16,6 +16,8 @@ from storage.storagemanager import StorageManager  # pyright: ignore
 from werkzeug.exceptions import NotFound
 
 
+ELEMENT_MARKER = "[]"
+
 _permissions = {}
 _placeholders = ["X_TENANT_ID", "TENANT_DEFINING_ENTITY_ID"]
 
@@ -308,6 +310,19 @@ def __is_allowed_to_crud_item_keys(
         restricted_key = (
             restricted_key.split(":")[1].removeprefix("!").removeprefix("?")
         )
+        if ELEMENT_MARKER in restricted_key:
+            restrict_keys_per_element(
+                user_context,
+                item,
+                flat_item,
+                restricted_key,
+                restricting_conditions,
+                crud,
+                object_lists,
+                flat_request_body,
+                key_to_check=key_to_check,
+            )
+            continue
         condition_match = True
         for condition_key, condition_values in restricting_conditions.items():
             condition_match = __item_value_in_values(
@@ -351,6 +366,68 @@ def __is_allowed_to_crud_item_keys(
 
     user_context.bag["requested_item"] = item
     return len(user_context.bag["restricted_keys"]) == 0
+
+
+def restrict_keys_per_element(
+    user_context: UserContext,
+    item,
+    flat_item,
+    restricted_key,
+    restricting_conditions,
+    crud,
+    object_lists,
+    flat_request_body: dict,
+    *,
+    key_to_check=None,
+):
+    if crud != "read":
+        raise Exception(
+            f"{get_error_code(ErrorCode.INSUFFICIENT_PERMISSIONS, get_read())} | key:{restricted_key} - "
+            f"'{ELEMENT_MARKER}' key restrictions are not supported for '{crud}', only for 'read'."
+        )
+
+    list_key, _, element_key = restricted_key.partition(f"{ELEMENT_MARKER}.")
+    elements = item
+    for key in list_key.split("."):
+        elements = elements.get(key) if isinstance(elements, dict) else None
+        if elements is None:
+            return
+    if not isinstance(elements, list):
+        return
+
+    kept = 0
+    for element in elements:
+        if not isinstance(element, dict):
+            continue
+        flat_element = flatten_dict(object_lists, element)
+        for condition_key, condition_values in restricting_conditions.items():
+            try:
+                condition_match = __item_value_in_values(
+                    flat_element if ELEMENT_MARKER in condition_key else flat_item,
+                    __scope_condition_key_to_element(condition_key, list_key),
+                    condition_values,
+                    flat_request_body,
+                    user_context,
+                )
+            except Exception:
+                condition_match = True
+            if not condition_match:
+                break
+        else:
+            element.pop(element_key, None)
+            continue
+        kept += element_key in element
+
+    if key_to_check and key_to_check == restricted_key and not kept:
+        user_context.bag["restricted_keys"].append(restricted_key)
+
+
+def __scope_condition_key_to_element(condition_key, list_key):
+    prefix = ""
+    while condition_key[:1] in ["!", "?"]:
+        prefix += condition_key[0]
+        condition_key = condition_key[1:]
+    return f"{prefix}{condition_key.removeprefix(f'{list_key}{ELEMENT_MARKER}.')}"
 
 
 def __item_value_in_values(
