@@ -40,6 +40,15 @@ loader = [
   "tzlocal>=5.2",
 ]
 util = ["cloudevents>=2.0.0"]
+# traces, metrics, logs and errors to an OpenTelemetry collector (elody.observability)
+observability = [
+  "Flask>=3.0.0",
+  "opentelemetry-api>=1.44.0",
+  "opentelemetry-sdk>=1.44.0",
+  "opentelemetry-exporter-otlp-proto-http>=1.44.0",
+  "opentelemetry-instrumentation-flask>=0.65b0",
+  "opentelemetry-instrumentation-requests>=0.65b0",
+]
 
 [project.urls]
 Homepage = "https://github.com/inuits/elody-python-sdk"
