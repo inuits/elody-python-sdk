@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name        = "elody"
-version     = "0.0.270"
+version     = "0.0.271"
 description = "elody SDK for Python"
 readme      = "README.md"
 authors     = [{ name = "Inuits", email = "developers@inuits.eu" }]
@@ -22,32 +22,32 @@ classifiers = [
 ]
 keywords = ["elody", "SDK"]
 dependencies = [
-  "certifi>=2023.5.7",
-  "charset-normalizer>=3.2.0",
-  "idna>=3.4",
-  "requests>=2.31.0",
-  "urllib3>=1.26.16",
+  "certifi>=2026.10.19",
+  "charset-normalizer>=3.5.0",
+  "idna>=3.18",
+  "requests>=2.34.2",
+  "urllib3>=2.8.0",
 ]
 
 [project.optional-dependencies]
 loader = [
-  "APScheduler>=3.10.4",
+  "APScheduler>=3.11.2",
   "cloudevents>=2.0.0",
-  "inuits-policy-based-auth>=10.0.1",
-  "jsonschema>=4.23.0",
-  "pytz>=2024.1",
-  "six>=1.16.0",
-  "tzlocal>=5.2",
+  "inuits-policy-based-auth>=10.1.1",
+  "jsonschema>=4.26.0",
+  "pytz>=2025.2",
+  "six>=1.17.0",
+  "tzlocal>=5.4.4",
 ]
 util = ["cloudevents>=2.0.0"]
 # traces, metrics, logs and errors to an OpenTelemetry collector (elody.observability)
 observability = [
-  "Flask>=3.0.0",
-  "opentelemetry-api>=1.44.0",
-  "opentelemetry-sdk>=1.44.0",
-  "opentelemetry-exporter-otlp-proto-http>=1.44.0",
-  "opentelemetry-instrumentation-flask>=0.65b0",
-  "opentelemetry-instrumentation-requests>=0.65b0",
+  "Flask>=3.1.3",
+  "opentelemetry-api>=1.45.1",
+  "opentelemetry-sdk>=1.45.1",
+  "opentelemetry-exporter-otlp-proto-http>=1.45.1",
+  "opentelemetry-instrumentation-flask>=0.66b0",
+  "opentelemetry-instrumentation-requests>=0.66b0",
 ]
 
 [project.urls]
