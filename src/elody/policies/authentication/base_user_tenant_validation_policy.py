@@ -21,19 +21,17 @@ class BaseUserTenantValidationPolicy(ABC):
         user_metadata_key_for_global_roles="roles",
         user_tenant_relation_type="hasTenant",
     ) -> dict:
-        config = get_object_configuration_mapper().get("user")
-        collection = config.crud()["collection"]
-        self.serialize = config.serialization(config.SCHEMA_TYPE, "elody")
-
-        user = storage.get_item_from_collection_by_id(collection, id) or {}
-        self.user = self.serialize(user)
+        collection = get_object_configuration_mapper().get("user").crud()["collection"]
+        user = self._serialize_user(
+            storage.get_item_from_collection_by_id(collection, id) or {}
+        )
         user_context.bag["roles_from_idp"] = deepcopy(user_context.x_tenant.roles)
         user_context.bag["user_metadata_key_for_global_roles"] = (
             user_metadata_key_for_global_roles
         )
         user_context.bag["user_tenant_relation_type"] = user_tenant_relation_type
 
-        return self.user
+        return user
 
     @abstractmethod
     def promote_role(self, user_context: UserContext):
@@ -54,16 +52,22 @@ class BaseUserTenantValidationPolicy(ABC):
     def build_user_context_for_authenticated_user(
         self, request, user_context: UserContext, user: dict
     ) -> UserContext:
-        self.user = self.serialize(user)
+        user = self._serialize_user(user)
         user_context = self.__build_user_context(request, user_context)
         user_context.x_tenant = Tenant()
         user_context.x_tenant.id = self._determine_tenant_id(request, user_context)
-        user_context.x_tenant.roles = self.__get_tenant_roles(request, user_context)
+        user_context.x_tenant.roles = self.__get_tenant_roles(
+            request, user_context, user
+        )
         return user_context
 
     @abstractmethod
     def _determine_tenant_id(self, request, user_context: UserContext) -> str:
         pass
+
+    def _serialize_user(self, user: dict) -> dict:
+        config = get_object_configuration_mapper().get("user")
+        return config.serialization(config.SCHEMA_TYPE, "elody")(user)
 
     def __build_user_context(self, request, user_context: UserContext):
         user_context.bag["http_method"] = request.method
@@ -72,7 +76,9 @@ class BaseUserTenantValidationPolicy(ABC):
         user_context.bag["collection_resolver"] = self._resolve_collections  # pyright: ignore
         return user_context
 
-    def __get_tenant_roles(self, request, user_context: UserContext) -> list[str]:
+    def __get_tenant_roles(
+        self, request, user_context: UserContext, user: dict
+    ) -> list[str]:
         """
         Gathering multiple tenants are supported, but there are some important notes:
             - all roles are stored in a combined way in user_context.x_tenant.roles
@@ -89,7 +95,7 @@ class BaseUserTenantValidationPolicy(ABC):
 
         roles = []
         try:
-            for metadata in self.user.get("metadata", []):
+            for metadata in user.get("metadata", []):
                 if metadata["key"] == user_context.bag[
                     "user_metadata_key_for_global_roles"
                 ] and metadata.get("value"):
@@ -103,7 +109,9 @@ class BaseUserTenantValidationPolicy(ABC):
                 for tenant_id in tenant_ids:
                     try:
                         user_tenant_relation = self.__get_user_tenant_relation(
-                            tenant_id, user_context.bag["user_tenant_relation_type"]
+                            user,
+                            tenant_id,
+                            user_context.bag["user_tenant_relation_type"],
                         )
                     except Forbidden as error:
                         user_tenant_relation = {}
@@ -125,10 +133,10 @@ class BaseUserTenantValidationPolicy(ABC):
         return list(set(roles))
 
     def __get_user_tenant_relation(
-        self, tenant_id: str, user_tenant_relation_type: str
+        self, user: dict, tenant_id: str, user_tenant_relation_type: str
     ) -> dict:
         user_tenant_relation = None
-        for relation in self.user.get("relations", []):
+        for relation in user.get("relations", []):
             if (
                 relation["key"] == tenant_id
                 and relation["type"] == user_tenant_relation_type
