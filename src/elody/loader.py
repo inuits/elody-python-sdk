@@ -140,6 +140,14 @@ def __instantiate_authentication_policy(policy_module_name, policy, logger):
             tenant_defining_types,
             os.getenv("AUTO_CREATE_TENANTS", False) in ["True", "true", True],
         )
+    if policy_module_name == "elody.policies.authentication.api_key_policy":
+        return policy(
+            util.read_json_as_dict(
+                os.getenv("TENANT_APP_ID_MAPPING", "tenant_app_id_mapping.json"),
+                logger,
+            ),
+            (os.getenv("STATIC_APIKEY") or "").strip(),
+        )
     return policy()
 
 
